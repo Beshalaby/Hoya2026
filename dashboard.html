@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - TraffiQ</title>
+    <meta name="description" content="Real-time AI-powered traffic analysis and optimization" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Clean Header -->
+        <header class="header">
+            <div class="header__brand">
+                <a href="/" class="header__logo-link">
+                    <svg class="header__logo" width="28" height="28" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2.5" />
+                        <path d="M10 16h12M16 10v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+                        <circle cx="16" cy="16" r="3" fill="currentColor" />
+                    </svg>
+                </a>
+                <span class="header__title">TraffiQ</span>
+                <span class="header__subtitle">AI Traffic Control</span>
+            </div>
+            <nav class="header__nav">
+                <a href="/dashboard.html" class="nav-btn nav-btn--active">Dashboard</a>
+                <a href="/analytics.html" class="nav-btn">Analytics</a>
+                <a href="/settings.html" class="nav-btn">Settings</a>
+            </nav>
+            <div class="header__actions">
+                <div class="status-pill" id="connectionStatus">
+                    <span class="status-pill__dot"></span>
+                    <span class="status-pill__text">Ready</span>
+                </div>
+                <button class="btn btn--outline" id="apiKeyBtn">API Key</button>
+            </div>
+        </header>
+
+        <!-- API Key Modal -->
+        <div class="modal" id="apiKeyModal">
+            <div class="modal__backdrop"></div>
+            <div class="modal__content">
+                <h2 class="modal__title">Connect API</h2>
+                <p class="modal__description">Enter your Overshoot API key to enable AI analysis</p>
+                <input type="password" class="input" id="apiKeyInput" placeholder="ovs_..." />
+                <div class="modal__actions">
+                    <button class="btn btn--ghost" id="apiKeyCancel">Cancel</button>
+                    <button class="btn btn--primary" id="apiKeySave">Connect</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Layout: Split View -->
+        <main class="main-layout">
+
+            <!-- Left Column: Map & Video -->
+            <div class="main-layout__left">
+
+                <!-- Map Section -->
+                <section class="card card--map" id="mapSection">
+                    <div class="card__header">
+                        <h2 class="card__title">Live Traffic Map</h2>
+                        <div class="card__actions">
+                            <button class="btn btn--primary btn--sm" id="addCameraBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                Add Camera
+                            </button>
+                            <button class="btn btn--outline btn--sm" id="locateMeBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <circle cx="12" cy="12" r="3" />
+                                    <line x1="12" y1="2" x2="12" y2="6" />
+                                    <line x1="12" y1="18" x2="12" y2="22" />
+                                    <line x1="2" y1="12" x2="6" y2="12" />
+                                    <line x1="18" y1="12" x2="22" y2="12" />
+                                </svg>
+                                Locate Me
+                            </button>
+                            <button class="chip chip--active" id="toggleHeatmapBtn">Heatmap</button>
+                        </div>
+                    </div>
+                    <div class="map-container" id="mapContainer">
+                        <!-- Leaflet map rendered here -->
+                    </div>
+                    <div class="map-legend" id="mapLegend">
+                        <span class="legend-item"><span class="legend-dot legend-dot--low"></span>Low Traffic</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot--medium"></span>Medium</span>
+                        <span class="legend-item"><span class="legend-dot legend-dot--high"></span>High</span>
+                        <span class="legend-item legend-item--camera"><span
+                                class="legend-dot legend-dot--camera"></span>Your Camera</span>
+                    </div>
+                </section>
+
+                <!-- Vertical Resizer -->
+                <div class="vertical-resizer" id="verticalResizer"></div>
+
+                <!-- Video Feed Section -->
+                <section class="card card--video" id="videoSection">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            Video Feed
+                            <span class="location-badge" id="videoCameraBadge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="8" />
+                                </svg>
+                                <span id="cameraLocationName">No camera</span>
+                            </span>
+                        </h2>
+                        <div class="card__actions">
+                            <button class="btn btn--primary btn--sm" id="demoBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                                Demo
+                            </button>
+                            <select id="cameraSelect" class="select select--sm" style="margin-right: 8px;">
+                                <option value="">Select Live Camera...</option>
+                                <option
+                                    value="https://strmr5.sha.maryland.gov/rtplive/1701ea3700f9004a005dd336c4235c0a/playlist.m3u8">
+                                    I-695 @ Balt Natl Pike</option>
+                                <option
+                                    value="https://strmr5.sha.maryland.gov/rtplive/2a0016ad00c900410047833633235daa/playlist.m3u8">
+                                    I-97 @ MD 178</option>
+                                <option
+                                    value="https://strmr3.sha.maryland.gov/rtplive/1b0001f0019700c40051fa36c4235c0a/playlist.m3u8">
+                                    I-97 N of MD 32</option>
+                            </select>
+                            <button class="btn btn--outline btn--sm" id="cameraBtn">Camera</button>
+                            <label class="btn btn--outline btn--sm" for="videoUpload">Upload</label>
+                            <input type="file" id="videoUpload" accept="video/*" hidden />
+                        </div>
+                    </div>
+                    <div class="video-container" id="videoContainer">
+                        <video id="videoElement" autoplay muted playsinline></video>
+                        <div class="video-overlay" id="videoOverlay">
+                            <div class="video-placeholder">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.5">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                    <line x1="7" y1="2" x2="7" y2="22" />
+                                    <line x1="17" y1="2" x2="17" y2="22" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <line x1="2" y1="7" x2="7" y2="7" />
+                                    <line x1="2" y1="17" x2="7" y2="17" />
+                                    <line x1="17" y1="17" x2="22" y2="17" />
+                                    <line x1="17" y1="7" x2="22" y2="7" />
+                                </svg>
+                                <p>Add a camera location on the map, then start camera or upload video to analyze
+                                    traffic</p>
+                            </div>
+                        </div>
+                        <div class="video-status" id="videoStatus">
+                            <span class="video-status__dot"></span>
+                            <span class="video-status__text">Ready</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Resizer -->
+            <div class="layout-resizer" id="layoutResizer"></div>
+
+            <!-- Right Column: Data & Controls -->
+            <div class="main-layout__right">
+
+                <!-- Quick Stats -->
+                <section class="card card--stats" id="statsSection">
+                    <div class="card__header">
+                        <h2 class="card__title">Live Statistics</h2>
+                        <span class="card__badge" id="activeIntersectionName">No camera selected</span>
+                    </div>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-item">
+                            <span class="stat-item__value" id="carCount">0</span>
+                            <span class="stat-item__label">Cars</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item__value" id="busCount">0</span>
+                            <span class="stat-item__label">Buses</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item__value" id="truckCount">0</span>
+                            <span class="stat-item__label">Trucks</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-item__value" id="motorcycleCount">0</span>
+                            <span class="stat-item__label">Motorcycles</span>
+                        </div>
+                        <div class="stat-item stat-item--highlight">
+                            <span class="stat-item__value" id="pedestrianCount">0</span>
+                            <span class="stat-item__label">Pedestrians</span>
+                        </div>
+                        <div class="stat-item stat-item--highlight">
+                            <span class="stat-item__value" id="avgWaitTime">0s</span>
+                            <span class="stat-item__label">Avg Wait</span>
+                        </div>
+                    </div>
+                    <div class="loading-overlay" id="statsLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                        <span>Analyzing video...</span>
+                    </div>
+                </section>
+
+                <!-- Lane Heatmap -->
+                <section class="card card--heatmap" id="heatmapSection">
+                    <div class="card__header">
+                        <h2 class="card__title">Intersection Lanes</h2>
+                    </div>
+                    <div class="lane-grid" id="heatmapGrid">
+                        <!-- Lanes will be dynamically rendered here -->
+                        <div class="loading-placeholder" style="grid-column: 1 / -1; text-align: center; color: var(--color-text-muted); padding: 2rem;">
+                            Waiting for analysis...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Alerts -->
+                <section class="card card--alerts" id="alertsSection">
+                    <div class="card__header">
+                        <h2 class="card__title">AI Alerts</h2>
+                        <span class="alert-count" id="alertCount">0</span>
+                    </div>
+                    <div class="alerts-list" id="alertsList">
+                        <div class="alert-empty">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                            </svg>
+                            <span>No alerts - traffic flowing smoothly</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Recommendations -->
+                <section class="card card--recommendations" id="recommendationsSection">
+                    <div class="card__header">
+                        <h2 class="card__title">AI Recommendations</h2>
+                    </div>
+                    <div class="recommendations-list" id="optimizationsList">
+                        <div class="recommendation-empty">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            <span>AI suggestions will appear here</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- Keyboard Shortcuts Hint -->
+        <div class="shortcuts-hint">
+            <span>D</span> Demo
+            <span>C</span> Camera
+            <span>E</span> Export
+            <span>M</span> Mute
+        </div>
+
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+
+</html>
