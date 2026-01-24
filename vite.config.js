@@ -10,6 +10,7 @@ export default defineConfig({
                 login: resolve(__dirname, 'login.html'),
                 settings: resolve(__dirname, 'settings.html'),
                 analytics: resolve(__dirname, 'analytics.html'),
+                insights: resolve(__dirname, 'insights.html'),
             },
         },
     },
