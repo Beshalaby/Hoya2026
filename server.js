@@ -61,14 +61,14 @@ app.get('/proxy', async (req, res) => {
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));
 
-// Handle SPAs / Multi-page entry points
-app.get('*', (req, res, next) => {
-    // If it's not a file (verified by static already) and not the proxy
-    if (!req.path.startsWith('/proxy')) {
-        res.sendFile(path.join(distPath, 'index.html'));
-    } else {
-        next();
+// Handle SPAs / Multi-page entry points (Catch-all middleware)
+app.use((req, res, next) => {
+    // If it's a proxy request, let it through
+    if (req.path.startsWith('/proxy')) {
+        return next();
     }
+    // For anything else, serve the index.html
+    res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
