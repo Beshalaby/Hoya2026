@@ -15,10 +15,10 @@ import { dataStore } from './src/services/DataStore.js';
 import { authService } from './src/services/AuthService.js';
 
 /**
- * TraffiQ - Traffic Optimization Dashboard
+ * TraffIQ - Traffic Optimization Dashboard
  * Main application entry point
  */
-class TraffiQApp {
+class TraffIQApp {
     constructor() {
         // Check if user is logged in
         if (!authService.requireAuth('/login.html')) {
@@ -58,7 +58,7 @@ class TraffiQApp {
     }
 
     async init() {
-        console.log('🚦 TraffiQ Dashboard initializing...');
+        console.log('🚦 TraffIQ Dashboard initializing...');
 
         // Initialize AI analyzer
         this.analyzer = new TrafficAnalyzer({
@@ -108,7 +108,7 @@ class TraffiQApp {
         this.setupEventListeners();
         this.setupResizer();
 
-        console.log('✅ TraffiQ Dashboard ready');
+        console.log('✅ TraffIQ Dashboard ready');
         console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, ?=Help');
         this.updateConnectionStatus('ready');
     }
@@ -448,7 +448,7 @@ ESC   - Stop demo / close modals
         // Sync map if ID is provided
         if (cameraId) {
             this.interactiveMap?.selectCamera(cameraId);
-            
+
             // Also update stats panel header
             // Try to find name from map cameras
             const camera = this.interactiveMap?.cameras.find(c => c.id == cameraId); // loose equality for string/num
@@ -599,7 +599,7 @@ ESC   - Stop demo / close modals
         // NEW: Record recommendations to DataStore
         if (data.optimization_suggestions && data.optimization_suggestions.length > 0) {
             data.optimization_suggestions.forEach(rec => {
-                 dataStore.recordRecommendation(rec);
+                dataStore.recordRecommendation(rec);
             });
         }
 

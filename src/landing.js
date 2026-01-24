@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             document.body.classList.remove('scrolled');
         }
+
+        // Parallax Effect for Hero Overlay
+        const heroOverlay = document.querySelector('.hero__overlay');
+        if (heroOverlay) {
+            const scrollValue = window.scrollY;
+            // Move background at 50% speed of scroll
+            heroOverlay.style.transform = `translateY(${scrollValue * 0.5}px)`;
+        }
     };
 
     // Initial check

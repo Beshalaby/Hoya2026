@@ -1,5 +1,5 @@
 /* ========================================
-   TraffiQ - Clean Functional Design
+   TraffIQ - Clean Functional Design
    Inspired by minimal, functional UI patterns
    ======================================== */
 
@@ -280,7 +280,8 @@ body {
   padding-top: var(--space-xs);
   padding-bottom: var(--space-xs);
   font-size: var(--font-size-xs);
-  min-height: 32px; /* Ensure match with buttons */
+  min-height: 32px;
+  /* Ensure match with buttons */
 }
 
 .chip {
@@ -333,27 +334,27 @@ body {
 }
 
 .vertical-resizer {
-    height: 12px;
-    cursor: row-resize;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin-bottom: var(--space-lg);
+  height: 12px;
+  cursor: row-resize;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: var(--space-lg);
 }
 
 .vertical-resizer::after {
-    content: '';
-    width: 40px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--color-border);
-    transition: background 0.15s;
+  content: '';
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+  transition: background 0.15s;
 }
 
 .vertical-resizer:hover::after,
 .vertical-resizer.is-resizing::after {
-    background: var(--color-primary);
+  background: var(--color-primary);
 }
 
 .layout-resizer::after {
@@ -486,19 +487,22 @@ body {
 /* Video Card */
 .card--video {
   min-height: 250px;
-  flex: 1; /* Video takes remaining space in column flow if we had fixed height */
+  flex: 1;
+  /* Video takes remaining space in column flow if we had fixed height */
 }
 
 .video-container {
   position: relative;
   aspect-ratio: 16/9;
-  background: var(--color-bg-elevated); /* Match app theme */
+  background: var(--color-bg-elevated);
+  /* Match app theme */
 }
 
 .video-container video {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Fix cutoff, ensure full video is visible */
+  object-fit: contain;
+  /* Fix cutoff, ensure full video is visible */
   background: black;
 }
 
@@ -742,7 +746,8 @@ body {
 /* Recommendations */
 .recommendations-list {
   max-height: none;
-  overflow: hidden; /* No scrolling - show max 5 items */
+  overflow: hidden;
+  /* No scrolling - show max 5 items */
 }
 
 .recommendation-item {
@@ -1314,6 +1319,7 @@ body {
     opacity: 0.5;
     transform: translateY(8px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -1343,6 +1349,7 @@ body {
     opacity: 0;
     transform: translateX(-10px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -1364,9 +1371,12 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.4;
   }
@@ -1385,9 +1395,11 @@ body {
   0% {
     transform: scale(0.8);
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(1);
   }
