@@ -1,0 +1,153 @@
+================================================================================
+                       TRAFFIQ HACKATHON VIDEO SCRIPT
+                            (Target: 2-4 Minutes)
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SECTION 1: THE HOOK (0:00 - 0:20)
+--------------------------------------------------------------------------------
+[VISUAL: Stock footage of bumper-to-bumper traffic. Horns honking.]
+
+NARRATOR (V.O.):
+"Every day, Americans waste 8.8 BILLION hours stuck in traffic.
+That's not just frustrating—it's $190 billion lost every year."
+
+[TEXT ON SCREEN: $190 Billion Lost Annually]
+
+NARRATOR (V.O.):
+"What if city traffic could think for itself?"
+
+
+--------------------------------------------------------------------------------
+SECTION 2: THE PROBLEM (0:20 - 0:45)
+--------------------------------------------------------------------------------
+[VISUAL: Quick cuts - traffic lights turning red, ambulance stuck in traffic, 
+exhaust fumes rising.]
+
+NARRATOR (V.O.):
+"Current traffic systems are stuck in the past.
+Lights run on fixed timers. Cities react AFTER accidents happen.
+There's no intelligence. No adaptation. No prediction."
+
+[TEXT ON SCREEN: No Intelligence. No Adaptation. No Prediction.]
+
+
+--------------------------------------------------------------------------------
+SECTION 3: INTRODUCE THE SOLUTION (0:45 - 1:00)
+--------------------------------------------------------------------------------
+[VISUAL: Fade to black, then reveal TraffiQ logo with a subtle glow animation.]
+
+NARRATOR (V.O.):
+"Introducing TraffiQ—AI that watches, learns, and optimizes traffic in real time."
+
+[VISUAL: Quick shot of TraffiQ landing page hero section.]
+
+NARRATOR (V.O.):
+"Connect any camera. Let our AI see what's happening. 
+And get actionable insights—instantly."
+
+
+--------------------------------------------------------------------------------
+SECTION 4: THE LIVE DEMO (1:00 - 2:30)
+--------------------------------------------------------------------------------
+[VISUAL: Screen recording of TraffiQ Dashboard]
+
+NARRATOR (V.O.):
+"Here's how it works."
+
+-- STEP 1: THE CALM STATE --
+[VISUAL: Dashboard with low traffic. Green heatmaps.]
+
+NARRATOR (V.O.):
+"This is our live traffic dashboard. 
+On the left, a real-time map with camera feeds.
+On the right, AI-generated statistics: vehicle counts, wait times, and alerts."
+
+-- STEP 2: TRIGGER THE CHAOS --
+[VISUAL: Click "Demo: Trigger Accident" button (or simulate an incident).]
+
+NARRATOR (V.O.):
+"Now, let's simulate an accident on Main Street."
+
+[VISUAL: Red alert banner flashes. Map marker turns red. Stats spike.]
+
+NARRATOR (V.O.):
+"The AI immediately detects the incident. 
+Look—congestion is spiking. Wait times are climbing."
+
+-- STEP 3: AI RECOMMENDATION --
+[VISUAL: Zoom into the "AI Recommendations" panel.]
+
+NARRATOR (V.O.):
+"But TraffiQ doesn't just watch. It advises.
+Right here: 'Reroute traffic via 4th Avenue. Dispatch EMS.'"
+
+-- STEP 4: THE FIX --
+[VISUAL: Click "AI Optimize" button. Show loading animation.]
+
+NARRATOR (V.O.):
+"With one click, the system re-sequences signals..."
+
+[VISUAL: Map transitions from red to green. Stats normalize.]
+
+NARRATOR (V.O.):
+"And just like that—flow is restored."
+
+
+--------------------------------------------------------------------------------
+SECTION 5: THE IMPACT (2:30 - 3:00)
+--------------------------------------------------------------------------------
+[VISUAL: Analytics page OR impact ticker on Dashboard.]
+
+NARRATOR (V.O.):
+"In this simulation alone, TraffiQ saved..."
+
+[TEXT ON SCREEN, animated in one by one:]
+  - 15 minutes of average delay
+  - 142 kg of CO₂ emissions
+  - $4,500 in estimated economic impact
+
+NARRATOR (V.O.):
+"Now imagine this running across an entire city. 24/7."
+
+
+--------------------------------------------------------------------------------
+SECTION 6: THE CLOSE (3:00 - 3:30)
+--------------------------------------------------------------------------------
+[VISUAL: Return to the TraffiQ landing page or logo.]
+
+NARRATOR (V.O.):
+"TraffiQ: Smarter traffic starts here."
+
+[VISUAL (Optional): Quick team photo or names on screen.]
+
+NARRATOR (V.O.):
+"Built by [Team Name] for [Hackathon Name]."
+
+[TEXT ON SCREEN: "Try TraffiQ" with a URL or QR code if applicable.]
+
+[FADE TO BLACK]
+
+
+================================================================================
+                              END OF SCRIPT
+================================================================================
+
+
+--- PRODUCTION NOTES ---
+
+1. MUSIC: Use upbeat, techy background music. Sites like Epidemic Sound or 
+   YouTube Audio Library have royalty-free options.
+
+2. VOICE: Record in a quiet room. Speak slowly and clearly. 
+   If you don't want to narrate, use text overlays with music instead.
+
+3. SCREEN RECORDING: Use OBS (free) or Loom. Make sure the cursor is visible 
+   and movements are slow enough to follow.
+
+4. TIMING: Practice the demo flow BEFORE recording. Know exactly which buttons 
+   to click and when.
+
+5. EDITING: Quick cuts keep energy high. Don't linger on any shot for more 
+   than 5-7 seconds unless it's critical.

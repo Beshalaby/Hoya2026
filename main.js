@@ -763,6 +763,18 @@ ESC   - Stop demo / close modals
         // Record traffic data to DataStore for analytics
         dataStore.recordTrafficData(trafficData);
 
+        // Record speed data if available
+        if (data.avg_speed_kmh) {
+            dataStore.recordSpeed(data.avg_speed_kmh);
+        }
+
+        // Record emergency vehicle events
+        if (data.emergency_vehicles && data.emergency_vehicles.length > 0) {
+            data.emergency_vehicles.forEach(ev => {
+                dataStore.recordEmergencyEvent(ev.type, ev.lane_id, ev.direction);
+            });
+        }
+
         // Record alerts to DataStore
         if (data.alerts && data.alerts.length > 0) {
             data.alerts.forEach(alert => {
@@ -773,11 +785,18 @@ ESC   - Stop demo / close modals
             this.audioAlerts?.processAlerts(data.alerts);
         }
 
-        // NEW: Record recommendations to DataStore
+        // Record recommendations to DataStore
         if (data.optimization_suggestions && data.optimization_suggestions.length > 0) {
             data.optimization_suggestions.forEach(rec => {
                 dataStore.recordRecommendation(rec);
             });
+
+            // Estimate savings when recommendations are applied
+            // Simple model: each recommendation saves ~0.5 min avg delay and ~0.2kg CO2 per vehicle
+            const totalVehicles = trafficData.car + trafficData.truck + trafficData.bus + trafficData.motorcycle;
+            const timeSaved = data.optimization_suggestions.length * 0.5 * Math.min(totalVehicles, 10);
+            const co2Saved = data.optimization_suggestions.length * 0.2 * Math.min(totalVehicles, 10);
+            dataStore.recordSavings(timeSaved, co2Saved);
         }
 
         // Update video status with latency info
