@@ -35,7 +35,7 @@ class AnalyticsPage {
                 option.textContent = name;
                 filter.appendChild(option);
             });
-            
+
             // Sync custom dropdown
             UIUtils.updateCustomDropdownOptions(filter.closest('.custom-select-wrapper'));
         }
@@ -44,15 +44,16 @@ class AnalyticsPage {
     init() {
         // Auto-generate realistic demo data if sparse (using official cameras only)
         // Relaxed threshold: if < 50 vehicles, overwrite with demo data for better UX
-        if (dataStore.data.analytics.totalVehicles < 50) {
-            console.log('⚠️ Sparse analytics data found (<50), auto-generating sample data...');
-            dataStore.generateComplexDemoData(OFFICIAL_CAMERAS);
-        }
+        // Auto-generate realistic demo data removed to prioritize real captured data
+        // if (dataStore.data.analytics.totalVehicles < 50) {
+        //     console.log('⚠️ Sparse analytics data found (<50), auto-generating sample data...');
+        //     dataStore.generateComplexDemoData(OFFICIAL_CAMERAS);
+        // }
 
         this.populateCameraFilter();
         // Setup dropdowns
         UIUtils.setupCustomDropdowns();
-        
+
         this.loadAnalytics();
         this.setupEventListeners();
         console.log('📊 Analytics page initialized');
@@ -60,6 +61,7 @@ class AnalyticsPage {
 
 
     loadAnalytics() {
+        dataStore.load(); // Force refresh from localStorage to get latest counts
         this.updateRoadSpecificCardsVisibility();
         this.updateSummaryCards();
         this.updatePeakHours();
@@ -71,10 +73,10 @@ class AnalyticsPage {
 
     updateRoadSpecificCardsVisibility() {
         // Always show these cards now that we have global aggregated data
-        const avgSpeedCard = document.getElementById('avgSpeedCard');
+        const avgQueueCard = document.getElementById('avgQueueCard');
         const emergencyCard = document.getElementById('emergencyCard');
-        
-        if (avgSpeedCard) avgSpeedCard.style.display = 'flex';
+
+        if (avgQueueCard) avgQueueCard.style.display = 'flex';
         if (emergencyCard) emergencyCard.style.display = 'flex';
     }
 
@@ -83,23 +85,27 @@ class AnalyticsPage {
         const summary = dataStore.getAnalyticsSummary(this.selectedCameraId || null);
 
         // Update summary card values by ID
-        const totalVehicles = document.getElementById('totalVehicles');
-        const avgWaitTime = document.getElementById('avgWaitTime');
-        const avgSpeed = document.getElementById('avgSpeed');
-        const flowEfficiency = document.getElementById('flowEfficiency');
-        const incidentsToday = document.getElementById('incidentsToday');
-        const timeSaved = document.getElementById('timeSaved');
-        const co2Saved = document.getElementById('co2Saved');
-        const emergencyEvents = document.getElementById('emergencyEvents');
+        const totalVehiclesEl = document.getElementById('totalVehicles');
+        const visualCongestionEl = document.getElementById('visualCongestion');
+        const avgQueueLengthEl = document.getElementById('avgQueueLength');
+        const flowEfficiencyEl = document.getElementById('flowEfficiency');
+        const incidentsTodayEl = document.getElementById('incidentsToday');
+        const timeSavedEl = document.getElementById('timeSaved');
+        const co2SavedEl = document.getElementById('co2Saved');
+        const emergencyEventsEl = document.getElementById('emergencyEvents');
 
-        if (totalVehicles) totalVehicles.textContent = summary.totalVehiclesToday.toLocaleString();
-        if (avgWaitTime) avgWaitTime.textContent = `${summary.avgWaitTime}s`;
-        if (avgSpeed) avgSpeed.textContent = summary.avgSpeedKmh || '—';
-        if (flowEfficiency) flowEfficiency.textContent = `${summary.flowEfficiency}%`;
-        if (incidentsToday) incidentsToday.textContent = summary.incidentsToday;
-        if (timeSaved) timeSaved.textContent = summary.timeSavedMinutes || 0;
-        if (co2Saved) co2Saved.textContent = summary.co2SavedKg || 0;
-        if (emergencyEvents) emergencyEvents.textContent = summary.emergencyEvents || 0;
+        if (totalVehiclesEl) {
+            let val = summary.totalVehiclesToday !== undefined ? summary.totalVehiclesToday : 0;
+            if (isNaN(Number(val))) val = 0;
+            totalVehiclesEl.textContent = Math.floor(Number(val)).toLocaleString();
+        }
+        if (visualCongestionEl) visualCongestionEl.textContent = summary.congestionScore || 'Low';
+        if (avgQueueLengthEl) avgQueueLengthEl.textContent = `${summary.avgQueueLength || 0}m`;
+        if (flowEfficiencyEl) flowEfficiencyEl.textContent = `${summary.flowEfficiency || 0}%`;
+        if (incidentsTodayEl) incidentsTodayEl.textContent = summary.incidentsToday || 0;
+        if (timeSavedEl) timeSavedEl.textContent = summary.timeSavedMinutes || 0;
+        if (co2SavedEl) co2SavedEl.textContent = summary.co2SavedKg || 0;
+        if (emergencyEventsEl) emergencyEventsEl.textContent = summary.emergencyEvents || 0;
     }
 
     updatePeakHours() {
@@ -107,12 +113,17 @@ class AnalyticsPage {
         const container = document.querySelector('.peak-hours-list');
         if (!container) return;
 
+        if (peakHours.length === 0) {
+            container.innerHTML = '<div class="empty-state">No peak hour data</div>';
+            return;
+        }
+
         const maxVehicles = Math.max(...peakHours.map(h => h.avgVehicles));
 
         container.innerHTML = peakHours.map(hour => {
             const timeStr = this.formatHour(hour.hour);
             const barWidth = maxVehicles > 0 ? (hour.avgVehicles / maxVehicles * 100) : 0;
-            
+
             // Dynamic color
             let color = 'var(--color-primary)';
             if (barWidth > 80) color = 'var(--color-danger, #ef4444)';
@@ -141,6 +152,11 @@ class AnalyticsPage {
         const intersections = dataStore.getBusiestIntersections();
         const container = document.querySelector('.intersections-list');
         if (!container) return;
+
+        if (intersections.length === 0) {
+            container.innerHTML = '<div class="empty-state">No intersection data</div>';
+            return;
+        }
 
         container.innerHTML = intersections.map((int, index) => `
             <div class="intersection-item">
@@ -314,8 +330,9 @@ class AnalyticsPage {
             }
         });
 
-        // Refresh data more frequently (every 5 seconds)
-        setInterval(() => this.loadAnalytics(), 5000);
+        // Refresh data more frequently (every 1 second for live feel)
+        // Auto-refresh removed per user request (load once only)
+        // setInterval(() => this.loadAnalytics(), 1000);
 
         // Listen for storage events from other tabs (dashboard)
         window.addEventListener('storage', (e) => {
@@ -350,7 +367,7 @@ Generated: ${new Date().toLocaleString()}
 SUMMARY
 -------
 Total Vehicles Today: ${summary.totalVehiclesToday}
-Average Wait Time: ${summary.avgWaitTime}s
+Visual Congestion: ${summary.congestionScore}
 Incidents Today: ${summary.incidentsToday}
 Flow Efficiency: ${summary.flowEfficiency}%
 

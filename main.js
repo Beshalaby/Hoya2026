@@ -12,6 +12,7 @@ import { SignalControl } from './src/components/SignalControl.js';
 import { UIUtils } from './src/utils/UIUtils.js';
 import { DemoDataGenerator } from './src/utils/DemoDataGenerator.js';
 import { AudioAlerts } from './src/utils/AudioAlerts.js';
+import { localCounter } from './src/ai/LocalCounter.js';
 import { dataStore } from './src/services/DataStore.js';
 import { authService } from './src/services/AuthService.js';
 
@@ -37,6 +38,7 @@ class TraffIQApp {
         this.demoGenerator = null;
         this.isDemoMode = false;
         this.audioAlerts = null;
+        this.lastAnalysisTime = 0;
 
         // UI elements
         this.connectionStatus = document.getElementById('connectionStatus');
@@ -670,8 +672,11 @@ ESC   - Stop demo / close modals
                 throw new Error('Video feed not ready');
             }
 
-            // Init analyzer with this element
+            // Init analyzer with this element (Overshoot - for alerts/logic)
             await this.analyzer.initWithVideoElement(videoEl);
+
+            // Start local counting (TF.js - now working via Proxy!)
+            localCounter.start(videoEl, (counts) => this.handleLocalCounts(counts));
 
             // Start analysis (will use intercepted getUserMedia from captured stream)
             await this.analyzer.start();
@@ -701,9 +706,54 @@ ESC   - Stop demo / close modals
      * Stop current analysis
      */
     async stopAnalysis() {
+        localCounter.stop(); // Stop local AI
         if (this.analyzer?.getIsRunning()) {
             await this.analyzer.stop();
         }
+    }
+
+    /**
+     * Handle Local AI object counts (runs frequently)
+     */
+    handleLocalCounts(counts) {
+        // Update stats panel with raw counts immediately for responsiveness
+        if (this.statsPanel) {
+            this.statsPanel.updateVehicleCounts(counts);
+        }
+
+        // Flow Logic (Moved from handleAIResult)
+        const now = Date.now();
+        const timeDeltaSeconds = this.lastAnalysisTime ? (now - this.lastAnalysisTime) / 1000 : 0;
+        this.lastAnalysisTime = now;
+
+        // Dwell Time Estimation (Highway Tuned)
+        // Highway speed (~100km/h or 28m/s). Video view might cover ~100m. 
+        // 100m / 28m/s = ~3.5 seconds to cross screen.
+        // Default (Low Queue) = 4s.
+        // Dwell Time Estimation (Highway Tuned - High Speed)
+        // Setting to 1.5s ensures 1 fast pass = 1 full count.
+        let dwellTimeSeconds = 1.5;
+
+        const queue = this.lastQueueLength || 0;
+        if (queue > 20) dwellTimeSeconds = 45; // Gridlock
+        else if (queue > 10) dwellTimeSeconds = 20; // Heavy
+        else if (queue > 5) dwellTimeSeconds = 8; // Moderate (slowing down)
+        else if (queue > 2) dwellTimeSeconds = 3; // Light traffic
+
+        // Calculate flow factor
+        // Limit delta to avoid huge jumps on tab switch
+        const validDelta = (timeDeltaSeconds > 0 && timeDeltaSeconds < 5) ? timeDeltaSeconds : 0.1;
+        const flowFactor = validDelta / dwellTimeSeconds;
+
+        const newTrafficData = {
+            car: counts.car * flowFactor,
+            truck: counts.truck * flowFactor,
+            bus: counts.bus * flowFactor,
+            motorcycle: counts.motorcycle * flowFactor,
+            avgWaitTime: 0
+        };
+
+        dataStore.recordTrafficData(newTrafficData);
     }
 
     /**
@@ -742,32 +792,18 @@ ESC   - Stop demo / close modals
         this.interactiveMap?.updateActiveIntersection(data);
         this.signalControl?.updateRecommendation(data);
 
-        // Aggregate vehicle counts from lanes for DataStore
-        const trafficData = {
-            car: 0,
-            truck: 0,
-            bus: 0,
-            motorcycle: 0,
-            avgWaitTime: data.avg_wait_seconds || 0
-        };
-
-        if (data.lanes && Array.isArray(data.lanes)) {
-            data.lanes.forEach(lane => {
-                if (lane.vehicle_types) {
-                    trafficData.car += lane.vehicle_types.car || 0;
-                    trafficData.truck += lane.vehicle_types.truck || 0;
-                    trafficData.bus += lane.vehicle_types.bus || 0;
-                    trafficData.motorcycle += lane.vehicle_types.motorcycle || 0;
-                }
-            });
+        // Update StatsPanel with pedestrian/wait data from Cloud AI
+        // Vehicles are handled by LocalCounter
+        if (this.statsPanel) {
+            this.statsPanel.update(data);
         }
 
-        // Record traffic data to DataStore for analytics
-        dataStore.recordTrafficData(trafficData);
-
-        // Record speed data if available
-        if (data.avg_speed_kmh) {
-            dataStore.recordSpeed(data.avg_speed_kmh);
+        // Record queue length data if available (keep this from LLM as it understands lanes better)
+        if (data.lanes && Array.isArray(data.lanes) && data.lanes.length > 0) {
+            const totalQueue = data.lanes.reduce((sum, lane) => sum + (lane.queue_length_meters || 0), 0);
+            const avgQueue = Math.round(totalQueue / data.lanes.length);
+            this.lastQueueLength = avgQueue; // Store for LocalCounter flow logic
+            dataStore.recordQueueLength(avgQueue);
         }
 
         // Record emergency vehicle events
@@ -809,7 +845,7 @@ ESC   - Stop demo / close modals
             // Each optimization suggestion reduces avg wait time by ~0.3-0.5 min per vehicle
             // Use conservative estimate of 0.3 min saved per suggestion
             const timeSavedPerVehicle = data.optimization_suggestions.length * 0.3;
-            
+
             // Calculate weighted CO2 savings based on vehicle mix
             const co2Saved = timeSavedPerVehicle * (
                 (trafficData.car || 0) * IDLING_RATES.car +
@@ -819,8 +855,8 @@ ESC   - Stop demo / close modals
             );
 
             // Total time saved (aggregate across all vehicles, in minutes)
-            const totalVehicles = (trafficData.car || 0) + (trafficData.truck || 0) + 
-                                  (trafficData.bus || 0) + (trafficData.motorcycle || 0);
+            const totalVehicles = (trafficData.car || 0) + (trafficData.truck || 0) +
+                (trafficData.bus || 0) + (trafficData.motorcycle || 0);
             const timeSaved = timeSavedPerVehicle * totalVehicles;
 
             dataStore.recordSavings(timeSaved, co2Saved);
@@ -1005,7 +1041,7 @@ ESC   - Stop demo / close modals
      */
     setupCustomDropdowns() {
         UIUtils.setupCustomDropdowns();
-        
+
         // Listen for changes from UIUtils (native select change)
         const select = document.getElementById('cameraSelect');
         if (select) {

@@ -9,14 +9,30 @@ export class HistoricalChart {
         this.periodButtons = document.querySelectorAll('[data-period]');
 
         this.currentPeriod = 'hour';
-        this.data = {
+
+        // Base key
+        this.baseKey = 'traffiq_historical_data';
+
+        // Initial load
+        this.data = this.loadFromStorage() || {
             hour: this.initHourlyData(),
             day: this.initDailyData()
         };
 
-        this.storageKey = 'traffiq_historical_data';
-        this.loadFromStorage();
         this.init();
+    }
+
+    get storageKey() {
+        try {
+            const session = localStorage.getItem('traffiq_session');
+            if (session) {
+                const user = JSON.parse(session).email;
+                if (user) return `${this.baseKey}_${user}`;
+            }
+        } catch (e) {
+            // ignore
+        }
+        return this.baseKey;
     }
 
     init() {
@@ -168,12 +184,13 @@ export class HistoricalChart {
                 const parsed = JSON.parse(saved);
                 // Validate and merge with current structure
                 if (parsed.hour && parsed.day) {
-                    this.data = parsed;
+                    return parsed;
                 }
             }
         } catch (e) {
             console.warn('Could not load historical data:', e);
         }
+        return null;
     }
 
     /**

@@ -27,26 +27,24 @@ export class StatsPanel {
     }
 
     /**
-     * Update statistics from AI data
+     * Update vehicle counts from Local AI
+     */
+    updateVehicleCounts(counts) {
+        if (!counts) return;
+        this.animateValue('carCount', counts.car || 0);
+        this.animateValue('busCount', counts.bus || 0);
+        this.animateValue('truckCount', counts.truck || 0);
+        this.animateValue('motorcycleCount', counts.motorcycle || 0);
+    }
+
+    /**
+     * Update general stats from AI data (pedestrians, wait time)
      */
     update(data) {
         if (!data) return;
 
-        // Calculate totals from lanes
-        let totalCars = 0;
-        let totalBuses = 0;
-        let totalTrucks = 0;
-        let totalMotorcycles = 0;
-
-        if (Array.isArray(data.lanes)) {
-            data.lanes.forEach(lane => {
-                const types = lane.vehicle_types || {};
-                totalCars += types.car || 0;
-                totalBuses += types.bus || 0;
-                totalTrucks += types.truck || 0;
-                totalMotorcycles += types.motorcycle || 0;
-            });
-        }
+        // Note: Vehicles are now updated via updateVehicleCounts() from LocalCounter
+        // We only process pedestrians and wait time here
 
         // Calculate average wait time
         let avgWait = 0;
@@ -60,10 +58,6 @@ export class StatsPanel {
         }
 
         // Update UI with animation
-        this.animateValue('carCount', totalCars);
-        this.animateValue('busCount', totalBuses);
-        this.animateValue('truckCount', totalTrucks);
-        this.animateValue('motorcycleCount', totalMotorcycles);
         this.animateValue('pedestrianCount', data.pedestrians || 0);
         this.updateWaitTime(avgWait);
     }

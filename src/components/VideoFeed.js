@@ -9,6 +9,9 @@ export class VideoFeed {
     constructor(options = {}) {
         this.container = document.getElementById('videoContainer');
         this.videoElement = document.getElementById('videoElement');
+        if (this.videoElement) {
+            this.videoElement.crossOrigin = 'anonymous';
+        }
         this.overlay = document.getElementById('videoOverlay');
         this.status = document.getElementById('videoStatus');
 
@@ -139,7 +142,15 @@ export class VideoFeed {
         if (!url) return;
 
         if (Hls.isSupported()) {
-            this.hls = new Hls();
+            this.hls = new Hls({
+                xhrSetup: (xhr, url) => {
+                    // Rewrite all HLS requests to go through local proxy to bypass CORS
+                    // This allows TF.js to read pixels from the video element
+                    if (url.includes('proxy')) return;
+                    const proxyUrl = `http://localhost:3001/proxy?url=${encodeURIComponent(url)}`;
+                    xhr.open('GET', proxyUrl, true);
+                }
+            });
             this.hls.loadSource(url);
             this.hls.attachMedia(this.videoElement);
 

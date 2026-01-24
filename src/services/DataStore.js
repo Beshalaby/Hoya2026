@@ -4,8 +4,21 @@
  */
 export class DataStore {
     constructor() {
-        this.storageKey = 'traffiq_data';
+        this.baseKey = 'traffiq_data';
         this.data = this.load();
+    }
+
+    get storageKey() {
+        try {
+            const session = localStorage.getItem('traffiq_session');
+            if (session) {
+                const user = JSON.parse(session).email;
+                if (user) return `${this.baseKey}_${user}`;
+            }
+        } catch (e) {
+            // ignore
+        }
+        return this.baseKey;
     }
 
     /**
@@ -15,7 +28,14 @@ export class DataStore {
         try {
             const stored = localStorage.getItem(this.storageKey);
             if (stored) {
-                return JSON.parse(stored);
+                let parsed = JSON.parse(stored);
+                // Sanitize NaNs
+                if (parsed?.analytics?.totalVehicles !== undefined && isNaN(parsed.analytics.totalVehicles)) {
+                    parsed.analytics.totalVehicles = 0;
+                }
+                // Update internal state so gets() reflect latest data
+                this.data = parsed;
+                return parsed;
             }
         } catch (e) {
             console.error('Error loading data:', e);
@@ -51,12 +71,12 @@ export class DataStore {
                 cameraHourlyData: {},
                 intersectionStats: {},
                 dailyTotals: {},
-                // Speed tracking
-                speedData: {
+                // Queue tracking (replaced speed)
+                queueData: {
                     totalReadings: 0,
-                    totalSpeedSum: 0,
-                    hourlySpeed: {}, // { hour: { sum, count } }
-                    cameraSpeed: {} // { cameraId: { sum, count } }
+                    totalQueueSum: 0,
+                    hourlyQueue: {}, // { hour: { sum, count } }
+                    cameraQueue: {} // { cameraId: { sum, count } }
                 },
                 // CO2 and time savings
                 savingsData: {
@@ -67,7 +87,7 @@ export class DataStore {
             },
             session: {
                 lastActive: null,
-                currentIntersection: 'Times Square'
+                currentIntersection: null
             }
         };
     }
@@ -252,19 +272,19 @@ export class DataStore {
     }
 
     /**
-     * Record speed data point
-     * @param {number} speedKmh - Average speed in km/h
+     * Record queue length data point
+     * @param {number} queueMeters - Average queue length in meters
      */
-    recordSpeed(speedKmh) {
-        if (!speedKmh || speedKmh <= 0) return;
+    recordQueueLength(queueMeters) {
+        if (queueMeters < 0) return;
 
         // Initialize if missing
-        if (!this.data.analytics.speedData) {
-            this.data.analytics.speedData = {
+        if (!this.data.analytics.queueData) {
+            this.data.analytics.queueData = {
                 totalReadings: 0,
-                totalSpeedSum: 0,
-                hourlySpeed: {},
-                cameraSpeed: {}
+                totalQueueSum: 0,
+                hourlyQueue: {},
+                cameraQueue: {}
             };
         }
 
@@ -272,22 +292,22 @@ export class DataStore {
         const camId = this.data.session.currentIntersection || 'unknown';
 
         // Update totals
-        this.data.analytics.speedData.totalReadings += 1;
-        this.data.analytics.speedData.totalSpeedSum += speedKmh;
+        this.data.analytics.queueData.totalReadings += 1;
+        this.data.analytics.queueData.totalQueueSum += queueMeters;
 
-        // Update hourly speed
-        if (!this.data.analytics.speedData.hourlySpeed[hour]) {
-            this.data.analytics.speedData.hourlySpeed[hour] = { sum: 0, count: 0 };
+        // Update hourly queue
+        if (!this.data.analytics.queueData.hourlyQueue[hour]) {
+            this.data.analytics.queueData.hourlyQueue[hour] = { sum: 0, count: 0 };
         }
-        this.data.analytics.speedData.hourlySpeed[hour].sum += speedKmh;
-        this.data.analytics.speedData.hourlySpeed[hour].count += 1;
+        this.data.analytics.queueData.hourlyQueue[hour].sum += queueMeters;
+        this.data.analytics.queueData.hourlyQueue[hour].count += 1;
 
-        // Update camera speed
-        if (!this.data.analytics.speedData.cameraSpeed[camId]) {
-            this.data.analytics.speedData.cameraSpeed[camId] = { sum: 0, count: 0 };
+        // Update camera queue
+        if (!this.data.analytics.queueData.cameraQueue[camId]) {
+            this.data.analytics.queueData.cameraQueue[camId] = { sum: 0, count: 0 };
         }
-        this.data.analytics.speedData.cameraSpeed[camId].sum += speedKmh;
-        this.data.analytics.speedData.cameraSpeed[camId].count += 1;
+        this.data.analytics.queueData.cameraQueue[camId].sum += queueMeters;
+        this.data.analytics.queueData.cameraQueue[camId].count += 1;
 
         this.save();
     }
@@ -396,22 +416,6 @@ export class DataStore {
         const today = new Date().toISOString().split('T')[0];
         const todayData = this.data.analytics.dailyTotals[today] || { vehicles: 0, incidents: 0, sessions: 0 };
 
-        // Get average wait time - use camera-specific if provided
-        let avgWait = 0;
-        if (cameraId && this.data.analytics.intersectionStats[cameraId]) {
-            avgWait = this.data.analytics.intersectionStats[cameraId].avgWait || 0;
-        } else if (!cameraId) {
-            const intersection = this.data.session.currentIntersection || 'Times Square';
-            const stats = this.data.analytics.intersectionStats[intersection];
-            avgWait = stats ? stats.avgWait : 0;
-        }
-
-        // Get vehicles for camera
-        let totalVehicles = todayData.vehicles;
-        if (cameraId && this.data.analytics.intersectionStats[cameraId]) {
-            totalVehicles = this.data.analytics.intersectionStats[cameraId].vehicles || 0;
-        }
-
         // Get incidents filtered by camera
         let incidentCount = todayData.incidents;
         if (cameraId) {
@@ -422,16 +426,16 @@ export class DataStore {
         }
 
         // Calculate efficiency
-        const efficiency = Math.min(99, Math.max(70, 94 - incidentCount * 2));
+        const efficiency = totalVehicles > 0 ? Math.min(99, Math.max(70, 94 - incidentCount * 2)) : 0;
 
-        // Get average speed - camera-specific if provided
-        let avgSpeed = 0;
-        const speedData = this.data.analytics.speedData || {};
-        if (cameraId && speedData.cameraSpeed?.[cameraId]) {
-            const cam = speedData.cameraSpeed[cameraId];
-            avgSpeed = cam.count > 0 ? Math.round(cam.sum / cam.count) : 0;
-        } else if (!cameraId && speedData.totalReadings > 0) {
-            avgSpeed = Math.round(speedData.totalSpeedSum / speedData.totalReadings);
+        // Get average queue length - camera-specific if provided
+        let avgQueue = 0;
+        const queueData = this.data.analytics.queueData || {};
+        if (cameraId && queueData.cameraQueue?.[cameraId]) {
+            const cam = queueData.cameraQueue[cameraId];
+            avgQueue = cam.count > 0 ? Math.round(cam.sum / cam.count) : 0;
+        } else if (!cameraId && queueData.totalReadings > 0) {
+            avgQueue = Math.round(queueData.totalQueueSum / queueData.totalReadings);
         }
 
         // Get savings data - currently global, but can be extended per-camera
@@ -455,13 +459,18 @@ export class DataStore {
             ).length;
         }
 
+        // Calculate congestion score
+        let congestionScore = 'Low';
+        if (efficiency < 60) congestionScore = 'High';
+        else if (efficiency < 85) congestionScore = 'Medium';
+
         return {
             totalVehiclesToday: totalVehicles,
-            avgWaitTime: avgWait,
+            congestionScore: congestionScore,
             incidentsToday: incidentCount,
             flowEfficiency: efficiency,
             totalSessions: this.data.analytics.totalSessions,
-            avgSpeedKmh: avgSpeed,
+            avgQueueLength: avgQueue,
             timeSavedMinutes: Math.round(timeSaved),
             co2SavedKg: Math.round(co2Saved * 10) / 10,
             emergencyEvents: emergencyCount
@@ -498,13 +507,7 @@ export class DataStore {
 
         // If no data, return default peak hours with 0 values
         if (hours.length === 0) {
-            return [
-                { hour: 8, avgVehicles: 0 },
-                { hour: 17, avgVehicles: 0 },
-                { hour: 18, avgVehicles: 0 },
-                { hour: 9, avgVehicles: 0 },
-                { hour: 12, avgVehicles: 0 }
-            ];
+            return [];
         }
 
         return hours;
@@ -526,12 +529,7 @@ export class DataStore {
 
         // If no data, return defaults with 0 values
         if (intersections.length === 0) {
-            return [
-                { name: 'Times Square', vehicles: 0, congestion: 'low' },
-                { name: 'Herald Square', vehicles: 0, congestion: 'low' },
-                { name: 'Penn Station', vehicles: 0, congestion: 'low' },
-                { name: 'Bryant Park', vehicles: 0, congestion: 'low' }
-            ];
+            return [];
         }
 
         return intersections;
