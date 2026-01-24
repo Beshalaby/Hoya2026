@@ -9,6 +9,7 @@ import { OptimizationsPanel } from './src/components/OptimizationsPanel.js';
 import { HistoricalChart } from './src/components/HistoricalChart.js';
 import { InteractiveMap } from './src/components/InteractiveMap.js';
 import { SignalControl } from './src/components/SignalControl.js';
+import { UIUtils } from './src/utils/UIUtils.js';
 import { DemoDataGenerator } from './src/utils/DemoDataGenerator.js';
 import { AudioAlerts } from './src/utils/AudioAlerts.js';
 import { dataStore } from './src/services/DataStore.js';
@@ -112,6 +113,7 @@ class TraffIQApp {
         this.setupEventListeners();
         this.setupResizer();
         this.setupAddCameraModal();
+        this.setupCustomDropdowns();
 
         // Initialize Analyzer logic
         this.initializeAnalyzer();
@@ -995,6 +997,21 @@ ESC   - Stop demo / close modals
         if (this.interactiveMap) {
             this.interactiveMap.removeCamera(id);
             console.log('🗑️ Camera removed:', id);
+        }
+    }
+
+    /**
+     * Setup custom dropdowns
+     */
+    setupCustomDropdowns() {
+        UIUtils.setupCustomDropdowns();
+        
+        // Listen for changes from UIUtils (native select change)
+        const select = document.getElementById('cameraSelect');
+        if (select) {
+            select.addEventListener('change', (e) => {
+                this.handleStreamSelect(e.target.value);
+            });
         }
     }
 
