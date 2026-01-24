@@ -16,8 +16,8 @@ class AnalyticsPage {
         // Auto-generate realistic demo data if sparse (using official cameras only)
         // Relaxed threshold: if < 50 vehicles, overwrite with demo data for better UX
         if (dataStore.data.analytics.totalVehicles < 50) {
-             console.log('⚠️ Sparse analytics data found (<50), auto-generating sample data...');
-             dataStore.generateComplexDemoData(OFFICIAL_CAMERAS);
+            console.log('⚠️ Sparse analytics data found (<50), auto-generating sample data...');
+            dataStore.generateComplexDemoData(OFFICIAL_CAMERAS);
         }
 
         this.populateCameraFilter();
@@ -32,17 +32,17 @@ class AnalyticsPage {
 
         // Get unique camera names from data store keys
         const storedCameras = Object.keys(dataStore.data.analytics.cameraHourlyData || {});
-        
+
         // Merge with official list to get nice names
         const allCameras = new Set([...storedCameras, ...OFFICIAL_CAMERAS.map(c => c.id)]);
-        
+
         // Clear (keep "All")
         filter.innerHTML = '<option value="">All Cameras</option>';
-        
+
         allCameras.forEach(camId => {
             const officialName = OFFICIAL_CAMERAS.find(c => c.id === camId)?.name;
             const name = officialName || camId; // Fallback to ID if custom/unknown
-            
+
             const option = document.createElement('option');
             option.value = camId;
             option.textContent = name;
@@ -51,6 +51,7 @@ class AnalyticsPage {
     }
 
     loadAnalytics() {
+        this.updateRoadSpecificCardsVisibility();
         this.updateSummaryCards();
         this.updatePeakHours();
         this.updateBusiestIntersections();
@@ -59,19 +60,43 @@ class AnalyticsPage {
         this.updateSuggestionsLog();
     }
 
+    updateRoadSpecificCardsVisibility() {
+        // Show/hide cards that should only appear when viewing a specific road
+        const avgSpeedCard = document.getElementById('avgSpeedCard');
+        const emergencyCard = document.getElementById('emergencyCard');
+        
+        const isSpecificRoad = this.selectedCameraId !== '';
+        
+        if (avgSpeedCard) {
+            avgSpeedCard.style.display = isSpecificRoad ? 'flex' : 'none';
+        }
+        if (emergencyCard) {
+            emergencyCard.style.display = isSpecificRoad ? 'flex' : 'none';
+        }
+    }
+
     updateSummaryCards() {
-        const summary = dataStore.getAnalyticsSummary();
+        // Pass selected camera to filter metrics
+        const summary = dataStore.getAnalyticsSummary(this.selectedCameraId || null);
 
         // Update summary card values by ID
         const totalVehicles = document.getElementById('totalVehicles');
         const avgWaitTime = document.getElementById('avgWaitTime');
-        const incidentsToday = document.getElementById('incidentsToday');
+        const avgSpeed = document.getElementById('avgSpeed');
         const flowEfficiency = document.getElementById('flowEfficiency');
+        const incidentsToday = document.getElementById('incidentsToday');
+        const timeSaved = document.getElementById('timeSaved');
+        const co2Saved = document.getElementById('co2Saved');
+        const emergencyEvents = document.getElementById('emergencyEvents');
 
         if (totalVehicles) totalVehicles.textContent = summary.totalVehiclesToday.toLocaleString();
         if (avgWaitTime) avgWaitTime.textContent = `${summary.avgWaitTime}s`;
-        if (incidentsToday) incidentsToday.textContent = summary.incidentsToday;
+        if (avgSpeed) avgSpeed.textContent = summary.avgSpeedKmh || '—';
         if (flowEfficiency) flowEfficiency.textContent = `${summary.flowEfficiency}%`;
+        if (incidentsToday) incidentsToday.textContent = summary.incidentsToday;
+        if (timeSaved) timeSaved.textContent = summary.timeSavedMinutes || 0;
+        if (co2Saved) co2Saved.textContent = summary.co2SavedKg || 0;
+        if (emergencyEvents) emergencyEvents.textContent = summary.emergencyEvents || 0;
     }
 
     updatePeakHours() {
@@ -126,18 +151,18 @@ class AnalyticsPage {
         const incidents = dataStore.getIncidents(20);
         const container = document.getElementById('incidentLogList');
         if (!container) return;
-        
+
         // Filter by camera if selected
         let filtered = incidents;
         if (this.selectedCameraId) {
-             // Look for ID match in intersection name or ID field? 
-             // Note: Incident log currently saves 'intersection' name, not ID. 
-             // This is a limitation, but we can fuzzy match or skip for now.
-             // Best effort:
-             const cameraName = OFFICIAL_CAMERAS.find(c => c.id === this.selectedCameraId)?.name;
-             if (cameraName) {
-                 filtered = incidents.filter(i => i.intersection === cameraName || i.intersection === this.selectedCameraId);
-             }
+            // Look for ID match in intersection name or ID field? 
+            // Note: Incident log currently saves 'intersection' name, not ID. 
+            // This is a limitation, but we can fuzzy match or skip for now.
+            // Best effort:
+            const cameraName = OFFICIAL_CAMERAS.find(c => c.id === this.selectedCameraId)?.name;
+            if (cameraName) {
+                filtered = incidents.filter(i => i.intersection === cameraName || i.intersection === this.selectedCameraId);
+            }
         }
 
         if (filtered.length === 0) {
@@ -163,21 +188,21 @@ class AnalyticsPage {
         const suggestions = dataStore.getRecommendations(20);
         const container = document.getElementById('aiInsightsList');
         if (!container) return;
-        
+
         // Filter
         let filtered = suggestions;
-         if (this.selectedCameraId) {
-             const cameraName = OFFICIAL_CAMERAS.find(c => c.id === this.selectedCameraId)?.name;
-             if (cameraName) {
-                 filtered = suggestions.filter(i => i.intersection === cameraName || i.intersection === this.selectedCameraId);
-             }
+        if (this.selectedCameraId) {
+            const cameraName = OFFICIAL_CAMERAS.find(c => c.id === this.selectedCameraId)?.name;
+            if (cameraName) {
+                filtered = suggestions.filter(i => i.intersection === cameraName || i.intersection === this.selectedCameraId);
+            }
         }
 
         if (filtered.length === 0) {
             container.innerHTML = '<div class="empty-state">No active suggestions</div>';
             return;
         }
-        
+
         container.innerHTML = filtered.map(item => `
             <div class="log-item">
                  <div class="recommendation-item__badge">AI</div>
@@ -227,9 +252,9 @@ class AnalyticsPage {
             // If data is just a number (simple sum) vs object (avg) - dataStore changed
             // Global: {vehicles, count}. Camera: {vehicles, count}
             const avgVehicles = data && data.count > 0 ? Math.round(data.vehicles / data.count) : 0;
-            
+
             const height = maxVehicles > 0 ? (avgVehicles / maxVehicles * 100) : 0;
-            
+
             // Adjust current hour
             const isNow = new Date().getHours() === hour;
             return `
@@ -280,7 +305,7 @@ class AnalyticsPage {
 
         // Refresh data more frequently (every 5 seconds)
         setInterval(() => this.loadAnalytics(), 5000);
-        
+
         // Listen for storage events from other tabs (dashboard)
         window.addEventListener('storage', (e) => {
             if (e.key === 'traffiq_data') {

@@ -19,6 +19,7 @@ export class DemoDataGenerator {
             // Normal traffic flow
             {
                 name: 'Normal Traffic',
+                avg_speed_kmh: 55,
                 lanes: [
                     { lane_id: 1, vehicle_count: 8, vehicle_types: { car: 6, truck: 1, bus: 0, motorcycle: 1 }, queue_length_meters: 15, congestion: 'low' },
                     { lane_id: 2, vehicle_count: 12, vehicle_types: { car: 9, truck: 2, bus: 1, motorcycle: 0 }, queue_length_meters: 25, congestion: 'medium' },
@@ -33,6 +34,7 @@ export class DemoDataGenerator {
             // Rush hour congestion
             {
                 name: 'Rush Hour',
+                avg_speed_kmh: 25,
                 lanes: [
                     { lane_id: 1, vehicle_count: 18, vehicle_types: { car: 14, truck: 2, bus: 1, motorcycle: 1 }, queue_length_meters: 45, congestion: 'high' },
                     { lane_id: 2, vehicle_count: 22, vehicle_types: { car: 17, truck: 3, bus: 2, motorcycle: 0 }, queue_length_meters: 55, congestion: 'high' },
@@ -64,6 +66,7 @@ export class DemoDataGenerator {
             // Safety incident
             {
                 name: 'Safety Alert',
+                avg_speed_kmh: 35,
                 lanes: [
                     { lane_id: 1, vehicle_count: 10, vehicle_types: { car: 8, truck: 1, bus: 0, motorcycle: 1 }, queue_length_meters: 20, congestion: 'medium' },
                     { lane_id: 2, vehicle_count: 8, vehicle_types: { car: 6, truck: 1, bus: 1, motorcycle: 0 }, queue_length_meters: 18, congestion: 'low' },
@@ -93,6 +96,7 @@ export class DemoDataGenerator {
             // Light traffic
             {
                 name: 'Light Traffic',
+                avg_speed_kmh: 65,
                 lanes: [
                     { lane_id: 1, vehicle_count: 3, vehicle_types: { car: 2, truck: 1, bus: 0, motorcycle: 0 }, queue_length_meters: 5, congestion: 'low' },
                     { lane_id: 2, vehicle_count: 5, vehicle_types: { car: 4, truck: 0, bus: 1, motorcycle: 0 }, queue_length_meters: 8, congestion: 'low' },
@@ -107,6 +111,7 @@ export class DemoDataGenerator {
             // Bus priority
             {
                 name: 'Bus Priority Active',
+                avg_speed_kmh: 45,
                 lanes: [
                     { lane_id: 1, vehicle_count: 9, vehicle_types: { car: 7, truck: 1, bus: 0, motorcycle: 1 }, queue_length_meters: 18, congestion: 'low' },
                     { lane_id: 2, vehicle_count: 6, vehicle_types: { car: 3, truck: 0, bus: 3, motorcycle: 0 }, queue_length_meters: 12, congestion: 'low' },
@@ -119,6 +124,30 @@ export class DemoDataGenerator {
                 optimization_suggestions: [
                     'Bus priority mode active - Lane 2 optimized',
                     'Reduce Lane 3 wait time after bus clears'
+                ]
+            },
+            // Emergency Response scenario
+            {
+                name: 'Emergency Response',
+                avg_speed_kmh: 40,
+                emergency_vehicles: [
+                    { type: 'ambulance', lane_id: 2, direction: 'Northbound' }
+                ],
+                lanes: [
+                    { lane_id: 1, vehicle_count: 6, vehicle_types: { car: 5, truck: 1, bus: 0, motorcycle: 0 }, queue_length_meters: 12, congestion: 'low' },
+                    { lane_id: 2, vehicle_count: 2, vehicle_types: { car: 1, truck: 0, bus: 0, motorcycle: 1 }, queue_length_meters: 5, congestion: 'low' },
+                    { lane_id: 3, vehicle_count: 8, vehicle_types: { car: 7, truck: 0, bus: 0, motorcycle: 1 }, queue_length_meters: 18, congestion: 'low' },
+                    { lane_id: 4, vehicle_count: 7, vehicle_types: { car: 6, truck: 1, bus: 0, motorcycle: 0 }, queue_length_meters: 15, congestion: 'low' }
+                ],
+                pedestrians: 5,
+                predicted_wait_seconds: { lane_1: 60, lane_2: 5, lane_3: 55, lane_4: 50 },
+                alerts: [
+                    '🚨 EMERGENCY VEHICLE DETECTED - Ambulance on Lane 2',
+                    'Priority signal override active'
+                ],
+                optimization_suggestions: [
+                    'PRIORITY: Clear Lane 2 immediately',
+                    'Extend green phase by 30 seconds for emergency corridor'
                 ]
             }
         ];

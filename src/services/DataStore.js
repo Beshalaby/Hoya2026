@@ -45,11 +45,25 @@ export class DataStore {
                 totalVehicles: 0,
                 totalSessions: 0,
                 incidents: [],
-                recommendations: [], // New: AI Suggestions
+                recommendations: [],
+                emergencyEvents: [], // Emergency vehicle detections
                 hourlyData: {},
-                cameraHourlyData: {}, // New: Hourly data per camera
+                cameraHourlyData: {},
                 intersectionStats: {},
-                dailyTotals: {}
+                dailyTotals: {},
+                // Speed tracking
+                speedData: {
+                    totalReadings: 0,
+                    totalSpeedSum: 0,
+                    hourlySpeed: {}, // { hour: { sum, count } }
+                    cameraSpeed: {} // { cameraId: { sum, count } }
+                },
+                // CO2 and time savings
+                savingsData: {
+                    totalTimeSavedMinutes: 0,
+                    totalCO2SavedKg: 0,
+                    optimizationsApplied: 0
+                }
             },
             session: {
                 lastActive: null,
@@ -238,27 +252,228 @@ export class DataStore {
     }
 
     /**
-     * Get analytics summary
+     * Record speed data point
+     * @param {number} speedKmh - Average speed in km/h
      */
-    getAnalyticsSummary() {
+    recordSpeed(speedKmh) {
+        if (!speedKmh || speedKmh <= 0) return;
+
+        // Initialize if missing
+        if (!this.data.analytics.speedData) {
+            this.data.analytics.speedData = {
+                totalReadings: 0,
+                totalSpeedSum: 0,
+                hourlySpeed: {},
+                cameraSpeed: {}
+            };
+        }
+
+        const hour = new Date().getHours();
+        const camId = this.data.session.currentIntersection || 'unknown';
+
+        // Update totals
+        this.data.analytics.speedData.totalReadings += 1;
+        this.data.analytics.speedData.totalSpeedSum += speedKmh;
+
+        // Update hourly speed
+        if (!this.data.analytics.speedData.hourlySpeed[hour]) {
+            this.data.analytics.speedData.hourlySpeed[hour] = { sum: 0, count: 0 };
+        }
+        this.data.analytics.speedData.hourlySpeed[hour].sum += speedKmh;
+        this.data.analytics.speedData.hourlySpeed[hour].count += 1;
+
+        // Update camera speed
+        if (!this.data.analytics.speedData.cameraSpeed[camId]) {
+            this.data.analytics.speedData.cameraSpeed[camId] = { sum: 0, count: 0 };
+        }
+        this.data.analytics.speedData.cameraSpeed[camId].sum += speedKmh;
+        this.data.analytics.speedData.cameraSpeed[camId].count += 1;
+
+        this.save();
+    }
+
+    /**
+     * Record emergency vehicle event
+     */
+    recordEmergencyEvent(type, lane, direction) {
+        if (!this.data.analytics.emergencyEvents) {
+            this.data.analytics.emergencyEvents = [];
+        }
+
+        const event = {
+            id: Date.now(),
+            type, // ambulance, fire_truck, police
+            lane,
+            direction,
+            timestamp: new Date().toISOString(),
+            intersection: this.data.session.currentIntersection,
+            clearedAt: null,
+            responseTimeSeconds: null
+        };
+
+        this.data.analytics.emergencyEvents.unshift(event);
+
+        // Keep only last 50
+        if (this.data.analytics.emergencyEvents.length > 50) {
+            this.data.analytics.emergencyEvents = this.data.analytics.emergencyEvents.slice(0, 50);
+        }
+
+        this.save();
+        return event.id;
+    }
+
+    /**
+     * Mark emergency event as cleared
+     */
+    clearEmergencyEvent(eventId) {
+        const event = this.data.analytics.emergencyEvents?.find(e => e.id === eventId);
+        if (event && !event.clearedAt) {
+            event.clearedAt = new Date().toISOString();
+            event.responseTimeSeconds = Math.round((new Date(event.clearedAt) - new Date(event.timestamp)) / 1000);
+            this.save();
+        }
+    }
+
+    /**
+     * Record optimization savings (time, CO2)
+     */
+    recordSavings(timeSavedMinutes, co2SavedKg) {
+        if (!this.data.analytics.savingsData) {
+            this.data.analytics.savingsData = {
+                totalTimeSavedMinutes: 0,
+                totalCO2SavedKg: 0,
+                optimizationsApplied: 0
+            };
+        }
+
+        this.data.analytics.savingsData.totalTimeSavedMinutes += timeSavedMinutes || 0;
+        this.data.analytics.savingsData.totalCO2SavedKg += co2SavedKg || 0;
+        this.data.analytics.savingsData.optimizationsApplied += 1;
+
+        this.save();
+    }
+
+    /**
+     * Get speed statistics
+     */
+    getSpeedStats(cameraId = null) {
+        const speedData = this.data.analytics.speedData || {};
+
+        if (cameraId && speedData.cameraSpeed?.[cameraId]) {
+            const cam = speedData.cameraSpeed[cameraId];
+            return {
+                avgSpeed: cam.count > 0 ? Math.round(cam.sum / cam.count) : 0,
+                readings: cam.count
+            };
+        }
+
+        return {
+            avgSpeed: speedData.totalReadings > 0
+                ? Math.round(speedData.totalSpeedSum / speedData.totalReadings)
+                : 0,
+            readings: speedData.totalReadings || 0
+        };
+    }
+
+    /**
+     * Get hourly speed data for charts
+     */
+    getHourlySpeedData() {
+        const hourlySpeed = this.data.analytics.speedData?.hourlySpeed || {};
+        return Object.entries(hourlySpeed).map(([hour, data]) => ({
+            hour: parseInt(hour),
+            avgSpeed: data.count > 0 ? Math.round(data.sum / data.count) : 0
+        }));
+    }
+
+
+
+    /**
+     * Get analytics summary, optionally filtered by camera
+     * @param {string|null} cameraId - Optional camera ID to filter by
+     */
+    getAnalyticsSummary(cameraId = null) {
         const today = new Date().toISOString().split('T')[0];
         const todayData = this.data.analytics.dailyTotals[today] || { vehicles: 0, incidents: 0, sessions: 0 };
 
-        // Get average wait time from current intersection
-        const intersection = this.data.session.currentIntersection || 'Times Square';
-        const stats = this.data.analytics.intersectionStats[intersection];
-        const avgWait = stats ? stats.avgWait : 0;
+        // Get average wait time - use camera-specific if provided
+        let avgWait = 0;
+        if (cameraId && this.data.analytics.intersectionStats[cameraId]) {
+            avgWait = this.data.analytics.intersectionStats[cameraId].avgWait || 0;
+        } else if (!cameraId) {
+            const intersection = this.data.session.currentIntersection || 'Times Square';
+            const stats = this.data.analytics.intersectionStats[intersection];
+            avgWait = stats ? stats.avgWait : 0;
+        }
+
+        // Get vehicles for camera
+        let totalVehicles = todayData.vehicles;
+        if (cameraId && this.data.analytics.intersectionStats[cameraId]) {
+            totalVehicles = this.data.analytics.intersectionStats[cameraId].vehicles || 0;
+        }
+
+        // Get incidents filtered by camera
+        let incidentCount = todayData.incidents;
+        if (cameraId) {
+            const cameraName = this.getCameraName(cameraId);
+            incidentCount = (this.data.analytics.incidents || []).filter(i =>
+                i.intersection === cameraId || i.intersection === cameraName
+            ).length;
+        }
 
         // Calculate efficiency
-        const efficiency = Math.min(99, Math.max(70, 94 - todayData.incidents * 2));
+        const efficiency = Math.min(99, Math.max(70, 94 - incidentCount * 2));
+
+        // Get average speed - camera-specific if provided
+        let avgSpeed = 0;
+        const speedData = this.data.analytics.speedData || {};
+        if (cameraId && speedData.cameraSpeed?.[cameraId]) {
+            const cam = speedData.cameraSpeed[cameraId];
+            avgSpeed = cam.count > 0 ? Math.round(cam.sum / cam.count) : 0;
+        } else if (!cameraId && speedData.totalReadings > 0) {
+            avgSpeed = Math.round(speedData.totalSpeedSum / speedData.totalReadings);
+        }
+
+        // Get savings data - currently global, but can be extended per-camera
+        const savings = this.data.analytics.savingsData || { totalTimeSavedMinutes: 0, totalCO2SavedKg: 0 };
+        let timeSaved = savings.totalTimeSavedMinutes;
+        let co2Saved = savings.totalCO2SavedKg;
+
+        // If camera selected, estimate proportional savings based on vehicle ratio
+        if (cameraId && todayData.vehicles > 0) {
+            const ratio = totalVehicles / todayData.vehicles;
+            timeSaved = Math.round(timeSaved * ratio);
+            co2Saved = Math.round(co2Saved * ratio * 10) / 10;
+        }
+
+        // Get emergency events filtered by camera
+        let emergencyCount = (this.data.analytics.emergencyEvents || []).length;
+        if (cameraId) {
+            const cameraName = this.getCameraName(cameraId);
+            emergencyCount = (this.data.analytics.emergencyEvents || []).filter(e =>
+                e.intersection === cameraId || e.intersection === cameraName
+            ).length;
+        }
 
         return {
-            totalVehiclesToday: todayData.vehicles,
+            totalVehiclesToday: totalVehicles,
             avgWaitTime: avgWait,
-            incidentsToday: todayData.incidents,
+            incidentsToday: incidentCount,
             flowEfficiency: efficiency,
-            totalSessions: this.data.analytics.totalSessions
+            totalSessions: this.data.analytics.totalSessions,
+            avgSpeedKmh: avgSpeed,
+            timeSavedMinutes: Math.round(timeSaved),
+            co2SavedKg: Math.round(co2Saved * 10) / 10,
+            emergencyEvents: emergencyCount
         };
+    }
+
+    /**
+     * Helper to get camera name from ID (for matching in incidents/events)
+     */
+    getCameraName(cameraId) {
+        // Try to find in intersection stats keys or return the ID itself
+        return cameraId;
     }
 
     /**
@@ -492,6 +707,72 @@ export class DataStore {
             const cam = targetCameras[Math.floor(Math.random() * targetCameras.length)];
             this.recordRecommendationWithMeta(recs[Math.floor(Math.random() * recs.length)], cam.name);
         }
+
+        // 5. Generate Speed Data
+        this.data.analytics.speedData = {
+            totalReadings: 0,
+            totalSpeedSum: 0,
+            hourlySpeed: {},
+            cameraSpeed: {}
+        };
+
+        // Generate hourly speed data (higher at night, lower during rush)
+        for (let h = 0; h < 24; h++) {
+            let avgSpeed;
+            if (h >= 7 && h < 10) avgSpeed = 25 + Math.random() * 15; // Morning rush
+            else if (h >= 16 && h < 19) avgSpeed = 20 + Math.random() * 15; // Evening rush
+            else if (h >= 22 || h < 6) avgSpeed = 55 + Math.random() * 15; // Night
+            else avgSpeed = 40 + Math.random() * 15; // Midday
+
+            const readings = 10 + Math.floor(Math.random() * 20);
+            this.data.analytics.speedData.hourlySpeed[h] = {
+                sum: avgSpeed * readings,
+                count: readings
+            };
+            this.data.analytics.speedData.totalReadings += readings;
+            this.data.analytics.speedData.totalSpeedSum += avgSpeed * readings;
+        }
+
+        // Speed per camera
+        targetCameras.forEach(cam => {
+            const avgSpeed = 30 + Math.random() * 30;
+            const readings = 50 + Math.floor(Math.random() * 100);
+            this.data.analytics.speedData.cameraSpeed[cam.id] = {
+                sum: avgSpeed * readings,
+                count: readings
+            };
+        });
+
+        // 6. Generate Emergency Events
+        this.data.analytics.emergencyEvents = [];
+        const emergencyTypes = ['ambulance', 'fire_truck', 'police'];
+        for (let i = 0; i < 5; i++) {
+            const cam = targetCameras[Math.floor(Math.random() * targetCameras.length)];
+            const time = new Date(now);
+            time.setHours(Math.floor(Math.random() * 24));
+            time.setMinutes(Math.floor(Math.random() * 60));
+
+            const clearedTime = new Date(time);
+            clearedTime.setSeconds(clearedTime.getSeconds() + 20 + Math.floor(Math.random() * 60));
+
+            this.data.analytics.emergencyEvents.push({
+                id: Date.now() + i + 1000,
+                type: emergencyTypes[Math.floor(Math.random() * emergencyTypes.length)],
+                lane: Math.floor(Math.random() * 4) + 1,
+                direction: ['Northbound', 'Southbound', 'Eastbound', 'Westbound'][Math.floor(Math.random() * 4)],
+                timestamp: time.toISOString(),
+                intersection: cam.name,
+                clearedAt: clearedTime.toISOString(),
+                responseTimeSeconds: Math.floor((clearedTime - time) / 1000)
+            });
+        }
+
+        // 7. Generate Savings Data
+        this.data.analytics.savingsData = {
+            totalTimeSavedMinutes: Math.floor(150 + Math.random() * 200),
+            totalCO2SavedKg: Math.round((50 + Math.random() * 100) * 10) / 10,
+            optimizationsApplied: Math.floor(20 + Math.random() * 30)
+        };
 
         this.save();
         console.log('✅ Complex demo data generated');
