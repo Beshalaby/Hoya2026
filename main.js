@@ -95,7 +95,8 @@ class TraffIQApp {
 
         // Initialize map and signal control
         this.interactiveMap = new InteractiveMap({
-            onCameraSelect: (camera) => this.handleMapCameraSelect(camera)
+            onCameraSelect: (camera) => this.handleMapCameraSelect(camera),
+            onAddCameraClick: (location) => this.openAddCameraModal(location)
         });
         this.signalControl = new SignalControl({
             onTimingChange: (timings) => this.handleTimingChange(timings)
@@ -110,12 +111,123 @@ class TraffIQApp {
         // Setup event listeners
         this.setupEventListeners();
         this.setupResizer();
+        this.setupAddCameraModal();
 
         // Initialize Analyzer logic
         this.initializeAnalyzer();
 
         console.log('✅ TraffIQ Dashboard ready');
         console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, ?=Help');
+    }
+
+    /**
+     * Setup Add Camera Modal Listeners
+     */
+    setupAddCameraModal() {
+        const modal = document.getElementById('addCameraModal');
+        const cancelBtn = document.getElementById('cancelAddCamera');
+        const confirmBtn = document.getElementById('confirmAddCamera');
+        const uploadBtn = document.getElementById('sourceTypeUpload');
+        const urlBtn = document.getElementById('sourceTypeUrl');
+        const uploadContainer = document.getElementById('uploadInputContainer');
+        const urlContainer = document.getElementById('urlInputContainer');
+
+        if (!modal) return;
+
+        // Toggle Source Type
+        uploadBtn?.addEventListener('click', () => {
+            uploadBtn.classList.add('btn--active');
+            uploadBtn.classList.remove('btn--ghost');
+            urlBtn.classList.remove('btn--active');
+            urlBtn.classList.add('btn--ghost');
+            uploadContainer.style.display = 'block';
+            urlContainer.style.display = 'none';
+            this.addCameraSourceType = 'file';
+        });
+
+        urlBtn?.addEventListener('click', () => {
+            urlBtn.classList.add('btn--active');
+            urlBtn.classList.remove('btn--ghost');
+            uploadBtn.classList.remove('btn--active');
+            uploadBtn.classList.add('btn--ghost');
+            uploadContainer.style.display = 'none';
+            urlContainer.style.display = 'block';
+            this.addCameraSourceType = 'url';
+        });
+
+        // Cancel
+        cancelBtn?.addEventListener('click', () => {
+            modal.classList.remove('modal--open');
+            this.pendingCameraLocation = null;
+        });
+
+        // Confirm
+        confirmBtn?.addEventListener('click', () => {
+            this.confirmAddCamera();
+        });
+
+        // Backdrop close
+        modal.querySelector('.modal__backdrop')?.addEventListener('click', () => {
+            modal.classList.remove('modal--open');
+            this.pendingCameraLocation = null;
+        });
+    }
+
+    /**
+     * Open Add Camera Modal
+     */
+    openAddCameraModal(location) {
+        this.pendingCameraLocation = location;
+        const modal = document.getElementById('addCameraModal');
+        if (modal) {
+            modal.classList.add('modal--open');
+            document.getElementById('newCameraName').value = '';
+            document.getElementById('newCameraUrl').value = '';
+            document.getElementById('newCameraFile').value = '';
+            this.addCameraSourceType = 'file'; // Default
+
+            // Reset UI to file upload
+            document.getElementById('sourceTypeUpload').click();
+
+            // Focus name input
+            setTimeout(() => document.getElementById('newCameraName').focus(), 100);
+        }
+    }
+
+    /**
+     * Confirm adding a camera
+     */
+    async confirmAddCamera() {
+        if (!this.pendingCameraLocation) return;
+
+        const nameInput = document.getElementById('newCameraName');
+        const name = nameInput.value.trim() || 'New Camera';
+
+        // Create the camera
+        const camera = this.interactiveMap.addNewCamera(
+            this.pendingCameraLocation.lat,
+            this.pendingCameraLocation.lng,
+            name
+        );
+
+        // Close modal
+        document.getElementById('addCameraModal').classList.remove('modal--open');
+        this.pendingCameraLocation = null;
+
+        // Process footage if provided
+        if (this.addCameraSourceType === 'file') {
+            const fileInput = document.getElementById('newCameraFile');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                await this.startVideoAnalysis(file);
+            }
+        } else {
+            const urlInput = document.getElementById('newCameraUrl');
+            const url = urlInput.value.trim();
+            if (url) {
+                this.handleStreamSelect(url, camera.id);
+            }
+        }
     }
 
     /**
@@ -130,12 +242,38 @@ class TraffIQApp {
             onStatusChange: (status) => this.updateConnectionStatus(status)
         });
 
-        // Check for saved API key
+        // Priority 1: Check User Profile (Account Settings)
+        const user = authService.getCurrentUser();
+        if (user && user.settings && user.settings.apiKey) {
+            console.log('🔑 API Key used from User Profile');
+            this.analyzer.setApiKey(user.settings.apiKey);
+            this.updateConnectionStatus('ready');
+            return;
+        }
+
+        // Priority 2: Check LocalStorage (Legacy/Device specific)
         const savedKey = this.analyzer.getSavedApiKey();
         if (savedKey) {
+            console.log('🔑 API Key used from LocalStorage');
             this.analyzer.setApiKey(savedKey);
+            // Also migrate to profile if logged in
+            if (user) {
+                authService.updateProfile({ settings: { apiKey: savedKey } });
+            }
             this.updateConnectionStatus('ready');
-        } else {
+        }
+        // Priority 3: Check Environment Variable (Developer/Deployment default)
+        else if (import.meta.env.VITE_OVERSHOOT_API_KEY) {
+            console.log('🔑 API Key used from Environment');
+            this.analyzer.setApiKey(import.meta.env.VITE_OVERSHOOT_API_KEY);
+            this.updateConnectionStatus('ready');
+
+            // Hide the API key button as requested since we are using a system key
+            if (this.apiKeyBtn) {
+                this.apiKeyBtn.style.display = 'none';
+            }
+        }
+        else {
             // No key found, prompt user
             console.log('🔑 No API key found, prompting user...');
             this.updateConnectionStatus('disconnected');
@@ -809,6 +947,16 @@ ESC   - Stop demo / close modals
 
         this.updateConnectionStatus('connected');
         console.log('🎮 Demo mode started - cycling through traffic scenarios');
+    }
+
+    /**
+     * Remove a camera from the map
+     */
+    removeCamera(id) {
+        if (this.interactiveMap) {
+            this.interactiveMap.removeCamera(id);
+            console.log('🗑️ Camera removed:', id);
+        }
     }
 
     /**

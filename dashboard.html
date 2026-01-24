@@ -267,6 +267,47 @@
             <span>M</span> Mute
         </div>
 
+        <!-- Add Camera Modal -->
+        <div class="modal" id="addCameraModal">
+            <div class="modal__backdrop"></div>
+            <div class="modal__content">
+                <h3 class="modal__title">Add New Camera</h3>
+                <p class="modal__description">Configure video source for this location</p>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label"
+                        style="display: block; margin-bottom: 8px; color: var(--color-text-secondary); font-size: 0.875rem;">Camera
+                        Name</label>
+                    <input type="text" id="newCameraName" class="input" placeholder="e.g. Downtown Intersection">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label"
+                        style="display: block; margin-bottom: 8px; color: var(--color-text-secondary); font-size: 0.875rem;">Video
+                        Source</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn btn--sm btn--active" id="sourceTypeUpload" style="flex:1;">Upload
+                            File</button>
+                        <button class="btn btn--sm btn--ghost" id="sourceTypeUrl" style="flex:1;">Stream URL</button>
+                    </div>
+
+                    <div id="uploadInputContainer">
+                        <input type="file" id="newCameraFile" class="input" accept="video/*" style="padding: 10px;">
+                    </div>
+
+                    <div id="urlInputContainer" style="display: none;">
+                        <input type="text" id="newCameraUrl" class="input"
+                            placeholder="http://example.com/hls/stream.m3u8">
+                    </div>
+                </div>
+
+                <div class="modal__actions">
+                    <button class="btn btn--ghost" id="cancelAddCamera">Cancel</button>
+                    <button class="btn btn--primary" id="confirmAddCamera">Create Camera</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script type="module" src="/main.js"></script>

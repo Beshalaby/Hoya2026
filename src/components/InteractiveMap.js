@@ -18,6 +18,7 @@ export class InteractiveMap {
         this.cameras = []; // User's camera locations
         this.selectedCameraId = null;
         this.onCameraSelect = options.onCameraSelect || null;
+        this.onAddCameraClick = options.onAddCameraClick || null;
         this.trafficData = new Map();
         this.addCameraMode = false;
         this.userLocation = null;
@@ -172,7 +173,12 @@ export class InteractiveMap {
     setupMapClick() {
         this.map.on('click', (e) => {
             if (this.addCameraMode) {
-                this.addNewCamera(e.latlng.lat, e.latlng.lng);
+                if (this.onAddCameraClick) {
+                    this.onAddCameraClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+                } else {
+                    // Fallback to legacy behavior
+                    this.addNewCamera(e.latlng.lat, e.latlng.lng);
+                }
                 this.toggleAddCameraMode(false);
             }
         });
@@ -353,9 +359,6 @@ export class InteractiveMap {
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button class="popup-btn" onclick="window.traffiQ?.selectCamera('${camera.id}')">
-                        Select
-                    </button>
                     ${camera.type !== 'official' ? `
                     <button class="popup-btn" style="background: var(--color-danger);" onclick="window.traffiQ?.removeCamera('${camera.id}')">
                         Delete
