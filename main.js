@@ -267,18 +267,13 @@ class TraffIQApp {
             console.log('🔑 API Key used from Environment');
             this.analyzer.setApiKey(import.meta.env.VITE_OVERSHOOT_API_KEY);
             this.updateConnectionStatus('ready');
-
-            // Hide the API key button as requested since we are using a system key
-            if (this.apiKeyBtn) {
-                this.apiKeyBtn.style.display = 'none';
-            }
         }
         else {
-            // No key found, prompt user
-            console.log('🔑 No API key found, prompting user...');
-            this.updateConnectionStatus('disconnected');
-            // Small delay to ensure UI is ready
-            setTimeout(() => this.openApiKeyModal(), 500);
+            // Fallback for user: use provided key if env fails
+            const fallbackKey = 'ovs_ad7c46804b149f5a6f169e8b59986328';
+            console.log('🔑 Using fallback API Key (Env missing)');
+            this.analyzer.setApiKey(fallbackKey);
+            this.updateConnectionStatus('ready');
         }
     }
 
@@ -805,11 +800,11 @@ ESC   - Stop demo / close modals
         // Handle API Key errors specifically
         const errorMsg = (error.message || '').toString().toLowerCase();
         if (errorMsg.includes('unauthorized') || errorMsg.includes('api key') || errorMsg.includes('401')) {
-            console.log('🔒 Auth error detected, prompting for key...');
+            console.log('🔒 Auth error detected, checking env...');
+            // this.openApiKeyModal(); // Disabled per user request
+            // If env key failed, maybe just log it?
             this.updateConnectionStatus('error');
-            this.openApiKeyModal();
-            // Show user friendly message in overlay
-            this.videoFeed?.setStatus('error', 'API Key expired or invalid. Please check settings.');
+            this.videoFeed?.setStatus('error', 'Auth Failed. Check .env or Console.');
             return;
         }
 
