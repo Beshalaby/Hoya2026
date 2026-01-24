@@ -120,18 +120,24 @@
                                 </svg>
                                 Demo
                             </button>
-                            <select id="cameraSelect" class="select select--sm" style="margin-right: 8px;">
-                                <option value="">Select Live Camera...</option>
-                                <option
-                                    value="https://strmr5.sha.maryland.gov/rtplive/1701ea3700f9004a005dd336c4235c0a/playlist.m3u8">
-                                    I-695 @ Balt Natl Pike</option>
-                                <option
-                                    value="https://strmr5.sha.maryland.gov/rtplive/2a0016ad00c900410047833633235daa/playlist.m3u8">
-                                    I-97 @ MD 178</option>
-                                <option
-                                    value="https://strmr3.sha.maryland.gov/rtplive/1b0001f0019700c40051fa36c4235c0a/playlist.m3u8">
-                                    I-97 N of MD 32</option>
-                            </select>
+                            <div class="custom-select-wrapper">
+                                <div class="custom-select" id="customCameraSelect">
+                                    <div class="custom-select__trigger">
+                                        <span id="customSelectValue">Select Live Camera...</span>
+                                        <div class="custom-select__arrow"></div>
+                                    </div>
+                                    <div class="custom-select__options">
+                                        <span class="custom-option selected" data-value="">Select Live Camera...</span>
+                                        <span class="custom-option" data-value="https://strmr5.sha.maryland.gov/rtplive/1701ea3700f9004a005dd336c4235c0a/playlist.m3u8">I-695 @ Balt Natl Pike</span>
+                                        <span class="custom-option" data-value="https://strmr5.sha.maryland.gov/rtplive/2a0016ad00c900410047833633235daa/playlist.m3u8">I-97 @ MD 178</span>
+                                        <span class="custom-option" data-value="https://strmr3.sha.maryland.gov/rtplive/1b0001f0019700c40051fa36c4235c0a/playlist.m3u8">I-97 N of MD 32</span>
+                                    </div>
+                                </div>
+                                <!-- Hidden Native Select for backward compatibility if needed, or remove completely -->
+                                <select id="cameraSelect" style="display:none">
+                                    <option value="">Select Live Camera...</option>
+                                </select>
+                            </div>
                             <button class="btn btn--outline btn--sm" id="cameraBtn">Camera</button>
                             <label class="btn btn--outline btn--sm" for="videoUpload">Upload</label>
                             <input type="file" id="videoUpload" accept="video/*" hidden />

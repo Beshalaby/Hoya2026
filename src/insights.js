@@ -4,6 +4,7 @@
  */
 import { dataStore } from './services/DataStore.js';
 import { OFFICIAL_CAMERAS } from './config/cameras.js';
+import { UIUtils } from './utils/UIUtils.js';
 import './style.css';
 
 class InsightsPage {
@@ -15,6 +16,7 @@ class InsightsPage {
 
     init() {
         this.populateCameraFilter();
+        UIUtils.setupCustomDropdowns();
         this.loadInsights();
         this.setupEventListeners();
         console.log('💡 AI Insights page initialized');
@@ -37,6 +39,8 @@ class InsightsPage {
             option.textContent = name;
             filter.appendChild(option);
         });
+
+        UIUtils.updateCustomDropdownOptions(filter.closest('.custom-select-wrapper'));
     }
 
     loadInsights() {

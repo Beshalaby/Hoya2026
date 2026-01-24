@@ -3,6 +3,7 @@
  * Handles settings UI and persistence
  */
 import { dataStore } from './services/DataStore.js';
+import { UIUtils } from './utils/UIUtils.js';
 import './style.css';
 
 class SettingsPage {
@@ -12,6 +13,7 @@ class SettingsPage {
 
     init() {
         this.loadSettings();
+        UIUtils.setupCustomDropdowns();
         this.setupEventListeners();
         console.log('⚙️ Settings page initialized');
     }
@@ -38,6 +40,11 @@ class SettingsPage {
         this.setSelect('defaultCamera', settings.defaultCamera);
         this.setSelect('frameRate', settings.frameRate);
         this.setSelect('dataRetention', settings.dataRetentionDays);
+
+        // Sync custom dropdowns
+        document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+            UIUtils.updateCustomDropdownOptions(wrapper);
+        });
     }
 
     setToggle(name, value) {

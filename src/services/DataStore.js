@@ -477,10 +477,17 @@ export class DataStore {
     }
 
     /**
-     * Get peak hours data
+     * Get peak hours data, optionally filtered by camera
+     * @param {string|null} cameraId - Optional camera ID to filter by
      */
-    getPeakHours() {
-        const hourlyData = this.data.analytics.hourlyData;
+    getPeakHours(cameraId = null) {
+        let hourlyData = this.data.analytics.hourlyData;
+
+        // Use camera specific data if requested and available
+        if (cameraId && this.data.analytics.cameraHourlyData && this.data.analytics.cameraHourlyData[cameraId]) {
+            hourlyData = this.data.analytics.cameraHourlyData[cameraId];
+        }
+
         const hours = Object.entries(hourlyData)
             .map(([hour, data]) => ({
                 hour: parseInt(hour),

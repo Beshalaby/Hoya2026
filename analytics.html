@@ -32,8 +32,17 @@
                 <a href="/settings.html" class="nav-btn">Settings</a>
             </nav>
             <div class="header__actions">
-                <div class="camera-filter-container">
-                    <select id="analyticsCameraFilter" class="select select--sm">
+                <div class="camera-filter-container custom-select-wrapper">
+                    <div class="custom-select" id="customAnalyticsFilter">
+                        <div class="custom-select__trigger">
+                            <span>All Cameras</span>
+                            <div class="custom-select__arrow"></div>
+                        </div>
+                        <div class="custom-select__options">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <select id="analyticsCameraFilter" style="display: none;">
                         <option value="">All Cameras</option>
                     </select>
                 </div>
@@ -421,11 +430,18 @@
             font-weight: 500;
         }
 
-        .peak-hour-item__bar {
+        .peak-hour-item__track {
             flex: 1;
             height: 8px;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-accent, #8b5cf6));
+            background: var(--color-bg-elevated);
             border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .peak-hour-item__bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
         }
 
         .peak-hour-item__value {

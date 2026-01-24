@@ -392,6 +392,13 @@ body {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg);
+  position: relative; /* Ensure z-index context */
+}
+
+/* Specific cards that need clipping */
+.card--map,
+.card--video {
   overflow: hidden;
 }
 
@@ -1494,4 +1501,116 @@ body {
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text-secondary);
   text-transform: uppercase;
+}
+/* ========================================
+   Custom Select Dropdown
+   ======================================== */
+.custom-select-wrapper {
+  position: relative;
+  user-select: none;
+  width: 200px;
+  margin-right: 8px;
+}
+
+.custom-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-select__trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-xs);
+  min-height: 32px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--color-text);
+}
+
+.custom-select__trigger:hover {
+  background: var(--color-bg-card);
+  border-color: var(--color-border-hover);
+}
+
+.custom-select.open .custom-select__trigger {
+  border-color: var(--color-primary);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.custom-select__trigger span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
+
+.custom-select__arrow {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--color-text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.custom-select.open .custom-select__arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select__options {
+  position: absolute;
+  display: block;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  z-index: 1000; /* Higher than card headers and other elements */
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.custom-select.open .custom-select__options {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+.custom-option {
+  position: relative;
+  display: block;
+  padding: 8px 12px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.custom-option:hover {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text);
+}
+
+.custom-option.selected {
+  color: var(--color-primary);
+  background-color: rgba(59, 130, 246, 0.1);
+  font-weight: 500;
 }

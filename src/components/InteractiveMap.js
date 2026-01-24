@@ -599,8 +599,9 @@ export class InteractiveMap {
 
         console.log(`🗑️ Camera removed: ${cameraId}`);
     }
-    * Select a camera
-    */
+    /**
+     * Select a camera
+     */
 selectCamera(val) {
     const cameraId = Number(val) || val;
     if (this.selectedCameraId === cameraId) return;

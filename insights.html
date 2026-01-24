@@ -32,9 +32,20 @@
                 <a href="/settings.html" class="nav-btn">Settings</a>
             </nav>
             <div class="header__actions">
-                    <select id="insightsCameraFilter" class="select select--sm">
-                        <option value="">All Roads</option>
-                    </select>
+            <div class="custom-select-wrapper">
+                <div class="custom-select" id="customInsightsFilter">
+                    <div class="custom-select__trigger">
+                        <span>All Roads</span>
+                        <div class="custom-select__arrow"></div>
+                    </div>
+                    <div class="custom-select__options">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                <select id="insightsCameraFilter" style="display: none;">
+                    <option value="">All Roads</option>
+                </select>
+            </div>
                 <div class="status-pill">
                     <span class="status-pill__dot"></span>
                     <span class="status-pill__text">AI Ready</span>

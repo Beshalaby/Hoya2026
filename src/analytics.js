@@ -4,12 +4,41 @@
  */
 import { dataStore } from './services/DataStore.js';
 import { OFFICIAL_CAMERAS } from './config/cameras.js'; // Import official cameras for names
+import { UIUtils } from './utils/UIUtils.js';
 import './style.css';
 
 class AnalyticsPage {
     constructor() {
         this.selectedCameraId = '';
         this.init();
+    }
+
+    populateCameraFilter() {
+        const filter = document.getElementById('analyticsCameraFilter');
+        if (filter) {
+            // Keep existing options logic but target the hidden filter
+            // Clear (keep "All")
+            filter.innerHTML = '<option value="">All Cameras</option>';
+
+            // Get unique camera names from data store keys
+            const storedCameras = Object.keys(dataStore.data.analytics.cameraHourlyData || {});
+
+            // Merge with official list to get nice names
+            const allCameras = new Set([...storedCameras, ...OFFICIAL_CAMERAS.map(c => c.id)]);
+
+            allCameras.forEach(camId => {
+                const officialName = OFFICIAL_CAMERAS.find(c => c.id === camId)?.name;
+                const name = officialName || camId; // Fallback to ID if custom/unknown
+
+                const option = document.createElement('option');
+                option.value = camId;
+                option.textContent = name;
+                filter.appendChild(option);
+            });
+            
+            // Sync custom dropdown
+            UIUtils.updateCustomDropdownOptions(filter.closest('.custom-select-wrapper'));
+        }
     }
 
     init() {
@@ -21,34 +50,14 @@ class AnalyticsPage {
         }
 
         this.populateCameraFilter();
+        // Setup dropdowns
+        UIUtils.setupCustomDropdowns();
+        
         this.loadAnalytics();
         this.setupEventListeners();
         console.log('📊 Analytics page initialized');
     }
 
-    populateCameraFilter() {
-        const filter = document.getElementById('analyticsCameraFilter');
-        if (!filter) return;
-
-        // Get unique camera names from data store keys
-        const storedCameras = Object.keys(dataStore.data.analytics.cameraHourlyData || {});
-
-        // Merge with official list to get nice names
-        const allCameras = new Set([...storedCameras, ...OFFICIAL_CAMERAS.map(c => c.id)]);
-
-        // Clear (keep "All")
-        filter.innerHTML = '<option value="">All Cameras</option>';
-
-        allCameras.forEach(camId => {
-            const officialName = OFFICIAL_CAMERAS.find(c => c.id === camId)?.name;
-            const name = officialName || camId; // Fallback to ID if custom/unknown
-
-            const option = document.createElement('option');
-            option.value = camId;
-            option.textContent = name;
-            filter.appendChild(option);
-        });
-    }
 
     loadAnalytics() {
         this.updateRoadSpecificCardsVisibility();
@@ -61,18 +70,12 @@ class AnalyticsPage {
     }
 
     updateRoadSpecificCardsVisibility() {
-        // Show/hide cards that should only appear when viewing a specific road
+        // Always show these cards now that we have global aggregated data
         const avgSpeedCard = document.getElementById('avgSpeedCard');
         const emergencyCard = document.getElementById('emergencyCard');
         
-        const isSpecificRoad = this.selectedCameraId !== '';
-        
-        if (avgSpeedCard) {
-            avgSpeedCard.style.display = isSpecificRoad ? 'flex' : 'none';
-        }
-        if (emergencyCard) {
-            emergencyCard.style.display = isSpecificRoad ? 'flex' : 'none';
-        }
+        if (avgSpeedCard) avgSpeedCard.style.display = 'flex';
+        if (emergencyCard) emergencyCard.style.display = 'flex';
     }
 
     updateSummaryCards() {
@@ -100,7 +103,7 @@ class AnalyticsPage {
     }
 
     updatePeakHours() {
-        const peakHours = dataStore.getPeakHours();
+        const peakHours = dataStore.getPeakHours(this.selectedCameraId);
         const container = document.querySelector('.peak-hours-list');
         if (!container) return;
 
@@ -109,11 +112,19 @@ class AnalyticsPage {
         container.innerHTML = peakHours.map(hour => {
             const timeStr = this.formatHour(hour.hour);
             const barWidth = maxVehicles > 0 ? (hour.avgVehicles / maxVehicles * 100) : 0;
+            
+            // Dynamic color
+            let color = 'var(--color-primary)';
+            if (barWidth > 80) color = 'var(--color-danger, #ef4444)';
+            else if (barWidth > 50) color = 'var(--color-warning, #f59e0b)';
+            else color = 'var(--color-primary, #3b82f6)';
 
             return `
                 <div class="peak-hour-item">
                     <span class="peak-hour-item__time">${timeStr}</span>
-                    <div class="peak-hour-item__bar" style="width: ${barWidth}%"></div>
+                    <div class="peak-hour-item__track">
+                        <div class="peak-hour-item__bar" style="width: ${barWidth}%; background: ${color}"></div>
+                    </div>
                     <span class="peak-hour-item__value">${hour.avgVehicles.toLocaleString()}</span>
                 </div>
             `;
