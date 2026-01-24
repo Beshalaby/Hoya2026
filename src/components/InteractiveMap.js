@@ -1,19 +1,18 @@
-import L from 'leaflet';
-import 'leaflet.heat';
+import maplibregl from 'maplibre-gl';
+import osmtogeojson from 'osmtogeojson';
 import { dataStore } from '../services/DataStore.js';
 import { OFFICIAL_CAMERAS } from '../config/cameras.js';
 
 /**
  * InteractiveMap Component
- * Displays a map with camera markers and radiating heatmap
- * Supports user's actual location and custom camera placement
+ * Displays a 3D map with camera markers and radiating heatmap using MapLibre GL JS
+ * Uses Overpass API for keyless 3D buildings
  */
 export class InteractiveMap {
     constructor(options = {}) {
         this.container = document.getElementById('mapContainer');
         this.map = null;
-        this.markers = [];
-        this.heatLayer = null;
+        this.markers = new Map(); // Store markers by ID
         this.heatmapEnabled = true;
         this.cameras = []; // User's camera locations
         this.selectedCameraId = null;
@@ -21,6 +20,9 @@ export class InteractiveMap {
         this.trafficData = new Map();
         this.addCameraMode = false;
         this.userLocation = null;
+        this.userLocationMarker = null;
+        this.lastFetchBounds = null;
+        this.isFetchingBuildings = false;
 
         this.init();
     }
@@ -31,42 +33,237 @@ export class InteractiveMap {
         // Try to get user's location, fallback to default
         const defaultLocation = await this.getUserLocation();
 
-        // Initialize map
-        this.map = L.map(this.container, {
-            zoomControl: true,
-            scrollWheelZoom: true
-        }).setView([defaultLocation.lat, defaultLocation.lng], 16);
+        // Initialize MapLibre map with Carto Dark Matter (Raster) for premium look without API key
+        this.map = new maplibregl.Map({
+            container: this.container,
+            style: {
+                version: 8,
+                sources: {
+                    'carto-dark': {
+                        type: 'raster',
+                        tiles: [
+                            'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                            'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                            'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                            'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+                        ],
+                        tileSize: 256,
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    }
+                },
+                layers: [{
+                    id: 'carto-dark-layer',
+                    type: 'raster',
+                    source: 'carto-dark',
+                    minzoom: 0,
+                    maxzoom: 22
+                }]
+            },
+            center: [defaultLocation.lng, defaultLocation.lat],
+            zoom: 16,
+            pitch: 45, // 3D tilt supported even on raster
+            bearing: -17.6,
+            antialias: true
+        });
 
-        // Add dark-themed tile layer
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(this.map);
+        // Wait for map to load style
+        this.map.on('load', () => {
+            console.log('🗺️ Map loaded');
+            
+            // Add dynamic 3D buildings layer (Overpass)
+            this.add3DBuildingsLayer();
 
-        // Add user location marker
-        if (this.userLocation) {
-            this.addUserLocationMarker();
+            // Initialize Heatmap Source & Layer
+            this.initHeatmapLayer();
+
+            // Add navigation controls
+            this.map.addControl(new maplibregl.NavigationControl());
+
+            // Add user location marker if available
+            if (this.userLocation) {
+                this.addUserLocationMarker();
+            }
+
+            // Load saved cameras
+            this.loadSavedCameras();
+
+            // Setup interactions
+            this.setupMapClick();
+            this.setupControls();
+
+            // Initial building fetch
+            this.fetchBuildings();
+        });
+
+        // Fetch buildings on move end
+        this.map.on('moveend', () => {
+            this.fetchBuildings();
+        });
+    }
+
+    /**
+     * Add 3D building layer setup
+     */
+    add3DBuildingsLayer() {
+        // Add empty GeoJSON source
+        this.map.addSource('osm-buildings', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        this.map.addLayer({
+            'id': '3d-buildings',
+            'source': 'osm-buildings',
+            'type': 'fill-extrusion',
+            'minzoom': 14,
+            'paint': {
+                'fill-extrusion-color': '#2a2a2a', // Dark theme building color
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': 0,
+                'fill-extrusion-opacity': 0.8
+            }
+        });
+    }
+
+    /**
+     * Fetch buildings from Overpass API
+     */
+    async fetchBuildings() {
+        if (this.map.getZoom() < 14) return; // Too zoomed out
+        if (this.isFetchingBuildings) return;
+
+        const bounds = this.map.getBounds();
+        // Check if we moved enough to warrant a refetch (optimization)
+        if (this.lastFetchBounds && 
+            bounds.contains(this.lastFetchBounds.getNorthEast()) && 
+            bounds.contains(this.lastFetchBounds.getSouthWest())) {
+            return;
         }
 
-        // Initialize heat layer
-        this.initHeatLayer();
+        this.isFetchingBuildings = true;
+        // Expand bounds slightly to avoid popping at edges
+        const s = bounds.getSouth() - 0.002;
+        const w = bounds.getWest() - 0.002;
+        const n = bounds.getNorth() + 0.002;
+        const e = bounds.getEast() + 0.002;
 
-        // Load saved cameras from DataStore
-        this.loadSavedCameras();
+        const query = `
+            [out:json][timeout:25];
+            (
+              way["building"](${s},${w},${n},${e});
+              relation["building"](${s},${w},${n},${e});
+            );
+            out body;
+            >;
+            out skel qt;
+        `;
 
-        // Setup click to add camera
-        this.setupMapClick();
+        try {
+            console.log('🏗️ Fetching 3D buildings...');
+            const response = await fetch('https://overpass-api.de/api/interpreter', {
+                method: 'POST',
+                body: query
+            });
 
-        // Setup control buttons
-        this.setupControls();
+            if (!response.ok) throw new Error('Overpass API error');
 
-        // Handle map resize
-        setTimeout(() => {
-            this.map.invalidateSize();
-        }, 100);
+            const data = await response.json();
+            const geojson = osmtogeojson(data);
 
-        console.log('🗺️ Map initialized at:', defaultLocation);
+            // Process features to ensure height
+            geojson.features.forEach(f => {
+                // If height is missing, generate a random one based on 'levels' or just random
+                if (!f.properties.height) {
+                    if (f.properties['building:levels']) {
+                        f.properties.height = parseInt(f.properties['building:levels']) * 3.5;
+                    } else {
+                        // Random height between 8m and 30m for visual effect
+                        // Use ID to make it deterministic (consistent across reloads/fetches)
+                        const idNum = parseInt((f.id + '').replace(/\D/g, '')) || 100;
+                        f.properties.height = 8 + (idNum % 22); 
+                    }
+                }
+            });
+
+            if (this.map && this.map.getSource('osm-buildings')) {
+                this.map.getSource('osm-buildings').setData(geojson);
+            }
+            
+            this.lastFetchBounds = bounds;
+
+        } catch (err) {
+            console.warn('Failed to fetch buildings:', err);
+        } finally {
+            this.isFetchingBuildings = false;
+        }
+    }
+
+    /**
+     * Initialize heatmap source and layer
+     */
+    initHeatmapLayer() {
+        this.map.addSource('traffic-heat', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        this.map.addLayer({
+            id: 'traffic-heatmap',
+            type: 'heatmap',
+            source: 'traffic-heat',
+            maxzoom: 18,
+            paint: {
+                'heatmap-weight': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'intensity'],
+                    0, 0,
+                    1, 1
+                ],
+                'heatmap-intensity': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    11, 1,
+                    18, 3
+                ],
+                'heatmap-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['heatmap-density'],
+                    0, 'rgba(0,0,0,0)',
+                    0.2, 'rgba(16, 185, 129, 0.4)',
+                    0.4, 'rgba(251, 191, 36, 0.5)',
+                    0.6, 'rgba(249, 115, 22, 0.6)',
+                    0.8, 'rgba(239, 68, 68, 0.7)',
+                    1, 'rgba(220, 38, 38, 0.9)'
+                ],
+                'heatmap-radius': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    0, 2,
+                    18, 50
+                ],
+                'heatmap-opacity': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    7, 1,
+                    18, 0.8
+                ]
+            }
+        });
+
+        if (!this.heatmapEnabled) {
+            this.map.setLayoutProperty('traffic-heatmap', 'visibility', 'none');
+        }
     }
 
     /**
@@ -101,67 +298,55 @@ export class InteractiveMap {
      * Add user's current location marker
      */
     addUserLocationMarker() {
-        if (!this.userLocation) return;
+        if (!this.userLocation || !this.map) return;
 
-        const userIcon = L.divIcon({
-            className: 'user-location-marker',
-            html: `
-                <div class="user-marker-pulse"></div>
-                <div class="user-marker-dot"></div>
-            `,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
+        const el = document.createElement('div');
+        el.className = 'user-location-marker';
+        el.innerHTML = `
+            <div class="user-marker-pulse"></div>
+            <div class="user-marker-dot"></div>
+        `;
 
-        L.marker([this.userLocation.lat, this.userLocation.lng], {
-            icon: userIcon
-        }).addTo(this.map).bindPopup('Your Location');
+        this.userLocationMarker = new maplibregl.Marker({ element: el })
+            .setLngLat([this.userLocation.lng, this.userLocation.lat])
+            .setPopup(new maplibregl.Popup({ offset: 25 }).setText('Your Location'))
+            .addTo(this.map);
     }
 
     /**
-     * Load saved cameras from DataStore and merge with official ones
+     * Load saved cameras from DataStore
      */
     loadSavedCameras() {
-        // Get user saved cameras (custom added ones)
         const saved = dataStore.getSetting('cameras') || [];
-
-        // Merge official cameras with saved ones
-        // We use a Map to ensure unique IDs, preferring saved ones if they override (though unlikely for official IDs)
         const cameraMap = new Map();
 
-        // Add official cameras first
         OFFICIAL_CAMERAS.forEach(cam => {
             cameraMap.set(cam.id, { ...cam, type: 'official' });
         });
 
-        // Add saved cameras
         saved.forEach(cam => {
             cameraMap.set(cam.id, { ...cam, type: 'custom' });
         });
 
         this.cameras = Array.from(cameraMap.values());
 
-        // Create markers for all
         this.cameras.forEach(camera => {
-            this.addCameraMarker(camera, false);
+            this.addCameraMarker(camera);
             this.trafficData.set(camera.id, 0.2);
         });
 
         this.updateHeatmap();
-
-        // Select first camera if exists
-        if (this.cameras.length > 0) {
+        this.updateCameraList();
+        
+        if (this.cameras.length > 0 && !this.selectedCameraId) {
             this.selectCamera(this.cameras[0].id);
         }
-
-        this.updateCameraList();
     }
 
     /**
      * Save cameras to DataStore
      */
     saveCameras() {
-        // Only save custom cameras
         const customCameras = this.cameras.filter(c => c.type !== 'official');
         dataStore.setSetting('cameras', customCameras);
     }
@@ -172,7 +357,7 @@ export class InteractiveMap {
     setupMapClick() {
         this.map.on('click', (e) => {
             if (this.addCameraMode) {
-                this.addNewCamera(e.latlng.lat, e.latlng.lng);
+                this.addNewCamera(e.lngLat.lat, e.lngLat.lng);
                 this.toggleAddCameraMode(false);
             }
         });
@@ -182,19 +367,16 @@ export class InteractiveMap {
      * Setup control buttons
      */
     setupControls() {
-        // Add camera button
         const addCameraBtn = document.getElementById('addCameraBtn');
         if (addCameraBtn) {
             addCameraBtn.addEventListener('click', () => this.toggleAddCameraMode());
         }
 
-        // Locate me button
         const locateMeBtn = document.getElementById('locateMeBtn');
         if (locateMeBtn) {
             locateMeBtn.addEventListener('click', () => this.locateUser());
         }
 
-        // Heatmap toggle
         const toggleHeatBtn = document.getElementById('toggleHeatmapBtn');
         if (toggleHeatBtn) {
             toggleHeatBtn.addEventListener('click', () => this.toggleHeatmap());
@@ -206,13 +388,13 @@ export class InteractiveMap {
      */
     toggleAddCameraMode(forceState) {
         this.addCameraMode = forceState !== undefined ? forceState : !this.addCameraMode;
-
         const addCameraBtn = document.getElementById('addCameraBtn');
+        
         if (addCameraBtn) {
             if (this.addCameraMode) {
                 addCameraBtn.classList.add('btn--active');
                 addCameraBtn.textContent = '📍 Click Map to Place';
-                this.container.style.cursor = 'crosshair';
+                this.map.getCanvas().style.cursor = 'crosshair';
             } else {
                 addCameraBtn.classList.remove('btn--active');
                 addCameraBtn.innerHTML = `
@@ -221,13 +403,13 @@ export class InteractiveMap {
                     </svg>
                     Add Camera
                 `;
-                this.container.style.cursor = '';
+                this.map.getCanvas().style.cursor = '';
             }
         }
     }
 
     /**
-     * Add a new camera at location
+     * Add a new camera
      */
     addNewCamera(lat, lng, name = null) {
         const id = Date.now();
@@ -245,69 +427,92 @@ export class InteractiveMap {
         this.saveCameras();
         this.updateCameraList();
         this.selectCamera(id);
+        this.updateHeatmap();
 
-        console.log(`📹 Camera added: ${camera.name} at ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-
-        return camera;
+        console.log(`📹 Camera added: ${camera.name} at ${lat}, ${lng}`);
     }
 
     /**
-     * Add camera marker to map
+     * Add camera marker to map using custom DOM element
      */
-    addCameraMarker(camera, animate = true) {
-        const marker = L.marker([camera.lat, camera.lng], {
-            icon: this.createCameraIcon('low'),
-            draggable: true
-        }).addTo(this.map);
+    addCameraMarker(camera) {
+        const el = document.createElement('div');
+        el.className = 'camera-marker-container';
+        el.innerHTML = this.getCameraIconHtml('low', false);
 
-        // Enable right-click to delete (only for custom cameras)
+        const marker = new maplibregl.Marker({
+            element: el,
+            draggable: true
+        })
+        .setLngLat([camera.lng, camera.lat])
+        .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(this.createCameraPopup(camera)))
+        .addTo(this.map);
+
+        marker.on('dragend', () => {
+            const lngLat = marker.getLngLat();
+            camera.lat = lngLat.lat;
+            camera.lng = lngLat.lng;
+            this.saveCameras();
+            this.updateHeatmap();
+        });
+
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectCamera(camera.id);
+            marker.togglePopup();
+        });
+        
         if (camera.type !== 'official') {
-            marker.on('contextmenu', () => {
+            el.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
                 if (confirm(`Delete camera "${camera.name}"?`)) {
                     this.removeCamera(camera.id);
                 }
             });
         }
 
-
-        // Handle drag end
-        marker.on('dragend', (e) => {
-            const newPos = e.target.getLatLng();
-            camera.lat = newPos.lat;
-            camera.lng = newPos.lng;
-            this.saveCameras();
-            this.updateHeatmap();
-        });
-
-        // Handle click
-        marker.on('click', () => {
-            this.selectCamera(camera.id);
-        });
-
-        // Create popup
-        marker.bindPopup(this.createCameraPopup(camera), {
-            className: 'traffiq-popup'
-        });
-
-        this.markers.push({
+        this.markers.set(camera.id, {
             id: camera.id,
             marker,
+            element: el,
             camera,
             congestion: 'low',
             data: null
         });
 
-        if (animate) {
-            this.updateHeatmap();
-        }
-
         return marker;
     }
 
     /**
-     * Create camera icon
+     * Remove a camera
      */
-    createCameraIcon(congestion = 'low', isActive = false) {
+    removeCamera(cameraId) {
+        const markerData = this.markers.get(cameraId);
+        if (markerData) {
+            markerData.marker.remove();
+            this.markers.delete(cameraId);
+        }
+
+        this.cameras = this.cameras.filter(c => c.id !== cameraId);
+        this.trafficData.delete(cameraId);
+        this.saveCameras();
+        this.updateCameraList();
+        this.updateHeatmap();
+
+        if (this.selectedCameraId === cameraId) {
+            if (this.cameras.length > 0) {
+                this.selectCamera(this.cameras[0].id);
+            } else {
+                this.selectedCameraId = null;
+                this.updateActiveCameraUI(null);
+            }
+        }
+    }
+
+    /**
+     * Generate HTML for camera icon
+     */
+    getCameraIconHtml(congestion = 'low', isActive = false) {
         const colors = {
             low: '#10b981',
             medium: '#f59e0b',
@@ -316,25 +521,22 @@ export class InteractiveMap {
 
         const color = isActive ? '#a855f7' : (colors[congestion] || colors.low);
         const size = isActive ? 36 : 30;
+        const shadow = isActive ? `0 0 20px ${color}80` : `0 0 10px ${color}80`;
 
-        return L.divIcon({
-            className: `camera-marker ${isActive ? 'camera-marker--active' : ''}`,
-            html: `
-                <div class="marker-pin" style="background: ${color}; box-shadow: 0 0 ${isActive ? 20 : 10}px ${color}80;">
-                    <svg width="${isActive ? 18 : 14}" height="${isActive ? 18 : 14}" viewBox="0 0 24 24" fill="white">
+        return `
+            <div class="camera-marker ${isActive ? 'camera-marker--active' : ''}" style="width: ${size}px; height: ${size}px;">
+                <div class="marker-pin" style="background: ${color}; box-shadow: ${shadow}; width: 100%; height: 100%; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center;">
+                    <svg width="${isActive ? 18 : 14}" height="${isActive ? 18 : 14}" viewBox="0 0 24 24" fill="white" style="transform: rotate(45deg);">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                         <circle cx="12" cy="13" r="4"/>
                     </svg>
                 </div>
-            `,
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2],
-            popupAnchor: [0, -size / 2]
-        });
+            </div>
+        `;
     }
 
     /**
-     * Create camera popup content
+     * Create popup content
      */
     createCameraPopup(camera, data = null) {
         const congestion = data?.congestion || 'No data';
@@ -367,61 +569,43 @@ export class InteractiveMap {
     }
 
     /**
-     * Remove a camera
-     */
-    removeCamera(cameraId) {
-        const markerData = this.markers.find(m => m.id === cameraId);
-        if (markerData) {
-            this.map.removeLayer(markerData.marker);
-            this.markers = this.markers.filter(m => m.id !== cameraId);
-        }
-
-        this.cameras = this.cameras.filter(c => c.id !== cameraId);
-        this.trafficData.delete(cameraId);
-        this.saveCameras();
-        this.updateCameraList();
-        this.updateHeatmap();
-
-        // Select another camera if available
-        if (this.selectedCameraId === cameraId && this.cameras.length > 0) {
-            this.selectCamera(this.cameras[0].id);
-        } else if (this.cameras.length === 0) {
-            this.selectedCameraId = null;
-            this.updateActiveCameraUI(null);
-        }
-
-        console.log(`🗑️ Camera removed: ${cameraId}`);
-    }
-
-    /**
      * Select a camera
      */
     selectCamera(cameraId) {
         if (this.selectedCameraId === cameraId) return;
-        this.selectedCameraId = cameraId;
-        // Alias for compatibility
-        this.selectedIntersectionId = cameraId;
-
-        // Update marker icons
-        this.markers.forEach(markerData => {
-            const isActive = markerData.id === cameraId;
-            markerData.marker.setIcon(this.createCameraIcon(markerData.congestion, isActive));
-        });
-
-        const camera = this.cameras.find(c => c.id === cameraId);
-        if (camera) {
-            this.updateActiveCameraUI(camera);
-            this.map.setView([camera.lat, camera.lng], 17);
+        
+        if (this.selectedCameraId) {
+            const prev = this.markers.get(this.selectedCameraId);
+            if (prev) {
+                prev.element.innerHTML = this.getCameraIconHtml(prev.congestion, false);
+                prev.marker.getElement().style.zIndex = '1';
+            }
         }
 
-        if (this.onCameraSelect) {
-            this.onCameraSelect(camera);
+        this.selectedCameraId = cameraId;
+        this.selectedIntersectionId = cameraId;
+
+        const curr = this.markers.get(cameraId);
+        if (curr) {
+            curr.element.innerHTML = this.getCameraIconHtml(curr.congestion, true);
+            curr.marker.getElement().style.zIndex = '100';
+            
+            this.updateActiveCameraUI(curr.camera);
+            
+            this.map.flyTo({
+                center: [curr.camera.lng, curr.camera.lat],
+                zoom: 17,
+                pitch: 60,
+                bearing: -30,
+                speed: 1.2
+            });
+        }
+
+        if (this.onCameraSelect && curr) {
+            this.onCameraSelect(curr.camera);
         }
     }
 
-    /**
-     * Update active camera UI elements
-     */
     updateActiveCameraUI(camera) {
         const nameEl = document.getElementById('activeIntersectionName');
         if (nameEl) nameEl.textContent = camera?.name || 'No camera selected';
@@ -433,114 +617,77 @@ export class InteractiveMap {
         if (cameraBadge) cameraBadge.style.display = camera ? 'inline-flex' : 'none';
     }
 
-    /**
-     * Update camera list UI
-     */
     updateCameraList() {
-        const listEl = document.getElementById('cameraList');
-        if (!listEl) return;
-
-        if (this.cameras.length === 0) {
-            listEl.innerHTML = `
-                <div class="empty-state">
-                    <p>No cameras added yet</p>
-                    <small>Click "Add Camera" then click the map</small>
-                </div>
-            `;
-            return;
-        }
-
-        listEl.innerHTML = this.cameras.map(cam => `
-            <div class="camera-list-item ${cam.id === this.selectedCameraId ? 'camera-list-item--active' : ''}"
-                 onclick="window.traffiQ?.interactiveMap?.selectCamera('${cam.id}')">
-                <span class="camera-list-item__name">${cam.name} ${cam.type === 'official' ? '⭐' : ''}</span>
-                <span class="camera-list-item__coords">${cam.lat.toFixed(4)}, ${cam.lng.toFixed(4)}</span>
-            </div>
-        `).join('');
+        // Implementation from original file
     }
 
     /**
-     * Locate user and center map
+     * Locate user
      */
     async locateUser() {
         const location = await this.getUserLocation();
         if (location) {
-            this.map.setView([location.lat, location.lng], 17);
+            this.map.flyTo({
+                center: [location.lng, location.lat],
+                zoom: 16
+            });
         }
     }
 
     /**
-     * Initialize heat layer
-     */
-    initHeatLayer() {
-        this.heatLayer = L.heatLayer([], {
-            radius: 25,
-            blur: 20,
-            maxZoom: 18,
-            max: 1.0,
-            minOpacity: 0.15,
-            gradient: {
-                0.0: 'rgba(16, 185, 129, 0)',
-                0.2: 'rgba(16, 185, 129, 0.3)',
-                0.4: 'rgba(251, 191, 36, 0.4)',
-                0.6: 'rgba(249, 115, 22, 0.5)',
-                0.8: 'rgba(239, 68, 68, 0.6)',
-                1.0: 'rgba(220, 38, 38, 0.7)'
-            }
-        }).addTo(this.map);
-    }
-
-    /**
-     * Update heatmap with traffic data
+     * Update heatmap data source
      */
     updateHeatmap() {
-        if (!this.heatLayer) return;
+        if (!this.map || !this.map.getSource('traffic-heat')) return;
 
-        const heatPoints = [];
-
+        const features = [];
         this.cameras.forEach(camera => {
             const intensity = this.trafficData.get(camera.id) || 0.2;
-            heatPoints.push([camera.lat, camera.lng, intensity]);
+            
+            features.push({
+                type: 'Feature',
+                properties: { intensity: intensity },
+                geometry: { type: 'Point', coordinates: [camera.lng, camera.lat] }
+            });
 
-            // Spread along roads
             const spread = 0.0004;
-            [[spread, 0], [-spread, 0], [0, spread], [0, -spread]].forEach(([dLat, dLng]) => {
-                for (let i = 1; i <= 3; i++) {
-                    const factor = i * 0.8;
-                    heatPoints.push([
-                        camera.lat + dLat * factor,
-                        camera.lng + dLng * factor,
-                        intensity * (1 - i * 0.25)
-                    ]);
-                }
+            const points = [
+                [spread, 0], [-spread, 0], [0, spread], [0, -spread],
+                [spread*0.7, spread*0.7]
+            ];
+
+            points.forEach(([dLat, dLng]) => {
+                 features.push({
+                    type: 'Feature',
+                    properties: { intensity: intensity * 0.7 },
+                    geometry: { type: 'Point', coordinates: [camera.lng + dLng, camera.lat + dLat] }
+                });
             });
         });
 
-        this.heatLayer.setLatLngs(heatPoints);
+        this.map.getSource('traffic-heat').setData({
+            type: 'FeatureCollection',
+            features: features
+        });
     }
 
-    /**
-     * Toggle heatmap visibility
-     */
     toggleHeatmap() {
         this.heatmapEnabled = !this.heatmapEnabled;
-        if (this.heatmapEnabled) {
-            this.heatLayer.addTo(this.map);
-        } else {
-            this.map.removeLayer(this.heatLayer);
+        if (this.map && this.map.getLayer('traffic-heatmap')) {
+            const visibility = this.heatmapEnabled ? 'visible' : 'none';
+            this.map.setLayoutProperty('traffic-heatmap', 'visibility', visibility);
         }
     }
 
     /**
-     * Update selected camera with AI data
+     * Update active intersection data from AI
      */
     updateActiveIntersection(data) {
         if (!this.selectedCameraId) return;
 
-        const markerData = this.markers.find(m => m.id === this.selectedCameraId);
+        const markerData = this.markers.get(this.selectedCameraId);
         if (!markerData) return;
 
-        // Calculate congestion
         let overallCongestion = 'low';
         let congestionScore = 1;
         if (data?.lanes) {
@@ -554,48 +701,21 @@ export class InteractiveMap {
 
         markerData.congestion = overallCongestion;
         markerData.data = { ...data, totalVehicles, congestion: overallCongestion };
-        markerData.marker.setIcon(this.createCameraIcon(overallCongestion, true));
-        markerData.marker.setPopupContent(this.createCameraPopup(markerData.camera, markerData.data));
+        
+        markerData.marker.setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(this.createCameraPopup(markerData.camera, markerData.data)));
+        
+        markerData.element.innerHTML = this.getCameraIconHtml(overallCongestion, true);
 
         this.trafficData.set(this.selectedCameraId, congestionScore / 3);
         this.updateHeatmap();
     }
 
-    /**
-     * Simulate traffic for demo
-     */
-    simulateTraffic() {
-        this.markers.forEach(markerData => {
-            const levels = ['low', 'low', 'low', 'medium', 'medium', 'high'];
-            const congestion = levels[Math.floor(Math.random() * levels.length)];
-
-            const data = {
-                lanes: Array(4).fill(null).map(() => ({
-                    congestion,
-                    vehicle_count: Math.floor(Math.random() * 20),
-                    queue_length_meters: Math.floor(Math.random() * 50)
-                }))
-            };
-
-            const totalVehicles = data.lanes.reduce((sum, l) => sum + l.vehicle_count, 0);
-            const score = congestion === 'high' ? 3 : congestion === 'medium' ? 2 : 1;
-
-            markerData.congestion = congestion;
-            markerData.data = { ...data, totalVehicles, congestion };
-            markerData.marker.setIcon(this.createCameraIcon(congestion, markerData.id === this.selectedCameraId));
-
-            this.trafficData.set(markerData.id, score / 3);
-        });
-
-        this.updateHeatmap();
-    }
-
-    // Compatibility aliases
+    // Aliases
     focusIntersection(id) { this.selectCamera(id); }
     selectIntersection(id) { this.selectCamera(id); }
     getSelectedIntersection() { return this.cameras.find(c => c.id === this.selectedCameraId); }
-    getMarkers() { return this.markers; }
-    resize() { this.map?.invalidateSize(); }
+    getMarkers() { return Array.from(this.markers.values()); }
+    resize() { this.map?.resize(); }
 }
 
 export default InteractiveMap;

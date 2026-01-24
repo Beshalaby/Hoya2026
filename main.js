@@ -1,5 +1,5 @@
 import './src/style.css';
-import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { TrafficAnalyzer } from './src/ai/TrafficAnalyzer.js';
 import { VideoFeed } from './src/components/VideoFeed.js';
 import { Heatmap } from './src/components/Heatmap.js';
