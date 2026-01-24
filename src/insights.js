@@ -196,11 +196,14 @@ class InsightsPage {
 
     renderItem(s) {
         const icons = {
-            'traffic-signal': '🚦',
-            'road-improvement': '🛣️',
-            'new-infrastructure': '🏗️',
-            'timing-optimization': '⏱️'
+            'traffic-signal': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M12 2l4 4s0 0 0 0M12 2l-4 4s0 0 0 0M12 22l4-4s0 0 0 0M12 22l-4-4s0 0 0 0"/></svg>', // signal/switch direction? Using zap for now or traffic light shape
+            'road-improvement': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16M4 2h16M9 2v20M15 2v20"/></svg>', // Road
+            'new-infrastructure': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12l-8-5-8 5V6l8 5 8-5v12z"/></svg>', // Construction/cone substitute -> using generic box/structure or traffic cone
+            'timing-optimization': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' // Timer
         };
+        // Refined icons
+        icons['traffic-signal'] = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>'; // Zap for optimization
+        icons['new-infrastructure'] = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22h20M7 21.9V11h10v10.9M5.6 11h12.8M12 4l-4 7h8l-4-7z"/></svg>'; // Cone-ish / structure
         const iconClass = {
             'traffic-signal': 'signal',
             'road-improvement': 'road',
@@ -210,7 +213,9 @@ class InsightsPage {
 
         return `
             <div class="insight-item">
-                <div class="insight-item__icon insight-item__icon--${iconClass[s.type]}">${icons[s.type]}</div>
+                <div class="insight-item__icon insight-item__icon--${iconClass[s.type]}">
+                    ${icons[s.type]}
+                </div>
                 <div class="insight-item__content">
                     <div class="insight-item__header">
                         <span class="insight-item__title">${s.title}</span>

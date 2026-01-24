@@ -59,18 +59,46 @@
             <!-- Simple Stats Row -->
             <div class="insights-stats-row">
                 <div class="insights-stat">
+                    <div class="insights-stat__icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                    </div>
                     <span class="insights-stat__value" id="totalSuggestions">0</span>
                     <span class="insights-stat__label">Total Recommendations</span>
                 </div>
                 <div class="insights-stat">
+                    <div class="insights-stat__icon insights-stat__icon--danger">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
                     <span class="insights-stat__value insights-stat__value--danger" id="highPriorityCount">0</span>
                     <span class="insights-stat__label">High Priority</span>
                 </div>
                 <div class="insights-stat">
+                    <div class="insights-stat__icon insights-stat__icon--warning">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
                     <span class="insights-stat__value" id="signalCount">0</span>
                     <span class="insights-stat__label">Signal Changes</span>
                 </div>
                 <div class="insights-stat">
+                    <div class="insights-stat__icon insights-stat__icon--success">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 21h18"/>
+                            <path d="M5 21V7l8-4 8 4v14"/>
+                            <path d="M17 21v-8.5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0-.5.5V21"/>
+                        </svg>
+                    </div>
                     <span class="insights-stat__value" id="infraCount">0</span>
                     <span class="insights-stat__label">Infrastructure</span>
                 </div>
@@ -195,7 +223,38 @@
             border: 1px solid var(--color-border);
             border-radius: var(--radius-lg);
             padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
+            gap: var(--space-sm);
+        }
+
+        .insights-stat__icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            background: var(--color-bg-elevated);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .insights-stat__icon--danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--color-danger);
+        }
+
+        .insights-stat__icon--warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--color-warning);
+        }
+
+        .insights-stat__icon--success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--color-success);
         }
 
         .insights-stat__value {
