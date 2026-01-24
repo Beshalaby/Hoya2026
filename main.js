@@ -440,9 +440,9 @@ class TraffIQApp {
                     // D = Toggle demo mode
                     this.toggleDemoMode();
                     break;
-                case 'c':
-                    // C = Start camera
-                    if (!this.isDemoMode) this.startCameraAnalysis();
+                case 'd':
+                    // D = Toggle demo mode
+                    this.toggleDemoMode();
                     break;
                 case 'e':
                     // E = Export data

@@ -599,154 +599,155 @@ export class InteractiveMap {
 
         console.log(`🗑️ Camera removed: ${cameraId}`);
     }
-    * Select a camera
-    */
-selectCamera(val) {
-    const cameraId = Number(val) || val;
-    if (this.selectedCameraId === cameraId) return;
+    /**
+     * Select a camera
+     */
+    selectCamera(val) {
+        const cameraId = Number(val) || val;
+        if (this.selectedCameraId === cameraId) return;
 
-    if (this.selectedCameraId) {
-        const prev = this.markers.get(this.selectedCameraId);
-        if (prev) {
-            prev.element.innerHTML = this.getCameraIconHtml(prev.congestion, false);
-            prev.marker.getElement().style.zIndex = '1';
+        if (this.selectedCameraId) {
+            const prev = this.markers.get(this.selectedCameraId);
+            if (prev) {
+                prev.element.innerHTML = this.getCameraIconHtml(prev.congestion, false);
+                prev.marker.getElement().style.zIndex = '1';
+            }
+        }
+
+        this.selectedCameraId = cameraId;
+        this.selectedIntersectionId = cameraId;
+
+        const curr = this.markers.get(cameraId);
+        if (curr) {
+            curr.element.innerHTML = this.getCameraIconHtml(curr.congestion, true);
+            curr.marker.getElement().style.zIndex = '100';
+
+            this.updateActiveCameraUI(curr.camera);
+
+            this.map.flyTo({
+                center: [curr.camera.lng, curr.camera.lat],
+                zoom: 17,
+                pitch: 60,
+                bearing: -30,
+                speed: 1.2
+            });
+        }
+
+        if (this.onCameraSelect && curr) {
+            this.onCameraSelect(curr.camera);
         }
     }
 
-    this.selectedCameraId = cameraId;
-    this.selectedIntersectionId = cameraId;
+    updateActiveCameraUI(camera) {
+        const nameEl = document.getElementById('activeIntersectionName');
+        if (nameEl) nameEl.textContent = camera?.name || 'No camera selected';
 
-    const curr = this.markers.get(cameraId);
-    if (curr) {
-        curr.element.innerHTML = this.getCameraIconHtml(curr.congestion, true);
-        curr.marker.getElement().style.zIndex = '100';
+        const cameraNameEl = document.getElementById('cameraLocationName');
+        if (cameraNameEl) cameraNameEl.textContent = camera?.name || 'No camera';
 
-        this.updateActiveCameraUI(curr.camera);
-
-        this.map.flyTo({
-            center: [curr.camera.lng, curr.camera.lat],
-            zoom: 17,
-            pitch: 60,
-            bearing: -30,
-            speed: 1.2
-        });
+        const cameraBadge = document.getElementById('videoCameraBadge');
+        if (cameraBadge) cameraBadge.style.display = camera ? 'inline-flex' : 'none';
     }
 
-    if (this.onCameraSelect && curr) {
-        this.onCameraSelect(curr.camera);
+    updateCameraList() {
+        // Implementation from original file
     }
-}
-
-updateActiveCameraUI(camera) {
-    const nameEl = document.getElementById('activeIntersectionName');
-    if (nameEl) nameEl.textContent = camera?.name || 'No camera selected';
-
-    const cameraNameEl = document.getElementById('cameraLocationName');
-    if (cameraNameEl) cameraNameEl.textContent = camera?.name || 'No camera';
-
-    const cameraBadge = document.getElementById('videoCameraBadge');
-    if (cameraBadge) cameraBadge.style.display = camera ? 'inline-flex' : 'none';
-}
-
-updateCameraList() {
-    // Implementation from original file
-}
 
     /**
      * Locate user
      */
     async locateUser() {
-    const location = await this.getUserLocation();
-    if (location) {
-        this.map.flyTo({
-            center: [location.lng, location.lat],
-            zoom: 16
-        });
+        const location = await this.getUserLocation();
+        if (location) {
+            this.map.flyTo({
+                center: [location.lng, location.lat],
+                zoom: 16
+            });
+        }
     }
-}
 
-/**
- * Update heatmap data source
- */
-updateHeatmap() {
-    if (!this.map || !this.map.getSource('traffic-heat')) return;
+    /**
+     * Update heatmap data source
+     */
+    updateHeatmap() {
+        if (!this.map || !this.map.getSource('traffic-heat')) return;
 
-    const features = [];
-    this.cameras.forEach(camera => {
-        const intensity = this.trafficData.get(camera.id) || 0.2;
+        const features = [];
+        this.cameras.forEach(camera => {
+            const intensity = this.trafficData.get(camera.id) || 0.2;
 
-        features.push({
-            type: 'Feature',
-            properties: { intensity: intensity },
-            geometry: { type: 'Point', coordinates: [camera.lng, camera.lat] }
-        });
-
-        const spread = 0.0004;
-        const points = [
-            [spread, 0], [-spread, 0], [0, spread], [0, -spread],
-            [spread * 0.7, spread * 0.7]
-        ];
-
-        points.forEach(([dLat, dLng]) => {
             features.push({
                 type: 'Feature',
-                properties: { intensity: intensity * 0.7 },
-                geometry: { type: 'Point', coordinates: [camera.lng + dLng, camera.lat + dLat] }
+                properties: { intensity: intensity },
+                geometry: { type: 'Point', coordinates: [camera.lng, camera.lat] }
+            });
+
+            const spread = 0.0004;
+            const points = [
+                [spread, 0], [-spread, 0], [0, spread], [0, -spread],
+                [spread * 0.7, spread * 0.7]
+            ];
+
+            points.forEach(([dLat, dLng]) => {
+                features.push({
+                    type: 'Feature',
+                    properties: { intensity: intensity * 0.7 },
+                    geometry: { type: 'Point', coordinates: [camera.lng + dLng, camera.lat + dLat] }
+                });
             });
         });
-    });
 
-    this.map.getSource('traffic-heat').setData({
-        type: 'FeatureCollection',
-        features: features
-    });
-}
-
-toggleHeatmap() {
-    this.heatmapEnabled = !this.heatmapEnabled;
-    if (this.map && this.map.getLayer('traffic-heatmap')) {
-        const visibility = this.heatmapEnabled ? 'visible' : 'none';
-        this.map.setLayoutProperty('traffic-heatmap', 'visibility', visibility);
-    }
-}
-
-/**
- * Update active intersection data from AI
- */
-updateActiveIntersection(data) {
-    if (!this.selectedCameraId) return;
-
-    const markerData = this.markers.get(this.selectedCameraId);
-    if (!markerData) return;
-
-    let overallCongestion = 'low';
-    let congestionScore = 1;
-    if (data?.lanes) {
-        const scores = data.lanes.map(l => l.congestion === 'high' ? 3 : l.congestion === 'medium' ? 2 : 1);
-        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-        congestionScore = avg;
-        overallCongestion = avg >= 2.5 ? 'high' : avg >= 1.5 ? 'medium' : 'low';
+        this.map.getSource('traffic-heat').setData({
+            type: 'FeatureCollection',
+            features: features
+        });
     }
 
-    const totalVehicles = data?.lanes?.reduce((sum, l) => sum + (l.vehicle_count || 0), 0) || 0;
+    toggleHeatmap() {
+        this.heatmapEnabled = !this.heatmapEnabled;
+        if (this.map && this.map.getLayer('traffic-heatmap')) {
+            const visibility = this.heatmapEnabled ? 'visible' : 'none';
+            this.map.setLayoutProperty('traffic-heatmap', 'visibility', visibility);
+        }
+    }
 
-    markerData.congestion = overallCongestion;
-    markerData.data = { ...data, totalVehicles, congestion: overallCongestion };
+    /**
+     * Update active intersection data from AI
+     */
+    updateActiveIntersection(data) {
+        if (!this.selectedCameraId) return;
 
-    markerData.marker.setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(this.createCameraPopup(markerData.camera, markerData.data)));
+        const markerData = this.markers.get(this.selectedCameraId);
+        if (!markerData) return;
 
-    markerData.element.innerHTML = this.getCameraIconHtml(overallCongestion, true);
+        let overallCongestion = 'low';
+        let congestionScore = 1;
+        if (data?.lanes) {
+            const scores = data.lanes.map(l => l.congestion === 'high' ? 3 : l.congestion === 'medium' ? 2 : 1);
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            congestionScore = avg;
+            overallCongestion = avg >= 2.5 ? 'high' : avg >= 1.5 ? 'medium' : 'low';
+        }
 
-    this.trafficData.set(this.selectedCameraId, congestionScore / 3);
-    this.updateHeatmap();
-}
+        const totalVehicles = data?.lanes?.reduce((sum, l) => sum + (l.vehicle_count || 0), 0) || 0;
 
-// Aliases
-focusIntersection(id) { this.selectCamera(id); }
-selectIntersection(id) { this.selectCamera(id); }
-getSelectedIntersection() { return this.cameras.find(c => c.id === this.selectedCameraId); }
-getMarkers() { return Array.from(this.markers.values()); }
-resize() { this.map?.resize(); }
+        markerData.congestion = overallCongestion;
+        markerData.data = { ...data, totalVehicles, congestion: overallCongestion };
+
+        markerData.marker.setPopup(new maplibregl.Popup({ offset: 25, closeButton: false }).setHTML(this.createCameraPopup(markerData.camera, markerData.data)));
+
+        markerData.element.innerHTML = this.getCameraIconHtml(overallCongestion, true);
+
+        this.trafficData.set(this.selectedCameraId, congestionScore / 3);
+        this.updateHeatmap();
+    }
+
+    // Aliases
+    focusIntersection(id) { this.selectCamera(id); }
+    selectIntersection(id) { this.selectCamera(id); }
+    getSelectedIntersection() { return this.cameras.find(c => c.id === this.selectedCameraId); }
+    getMarkers() { return Array.from(this.markers.values()); }
+    resize() { this.map?.resize(); }
 }
 
 export default InteractiveMap;

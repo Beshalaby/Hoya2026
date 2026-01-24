@@ -38,18 +38,7 @@
         </header>
 
         <!-- API Key Modal -->
-        <div class="modal" id="apiKeyModal">
-            <div class="modal__backdrop"></div>
-            <div class="modal__content">
-                <h2 class="modal__title">Connect API</h2>
-                <p class="modal__description">Enter your Overshoot API key to enable AI analysis</p>
-                <input type="password" class="input" id="apiKeyInput" placeholder="ovs_..." />
-                <div class="modal__actions">
-                    <button class="btn btn--ghost" id="apiKeyCancel">Cancel</button>
-                    <button class="btn btn--primary" id="apiKeySave">Connect</button>
-                </div>
-            </div>
-        </div>
+        <!-- API Key Modal (Removed) -->
 
         <!-- Main Layout: Split View -->
         <main class="main-layout">
@@ -131,7 +120,6 @@
                                     value="https://strmr3.sha.maryland.gov/rtplive/1b0001f0019700c40051fa36c4235c0a/playlist.m3u8">
                                     I-97 N of MD 32</option>
                             </select>
-                            <button class="btn btn--outline btn--sm" id="cameraBtn">Camera</button>
                             <label class="btn btn--outline btn--sm" for="videoUpload">Upload</label>
                             <input type="file" id="videoUpload" accept="video/*" hidden />
                         </div>

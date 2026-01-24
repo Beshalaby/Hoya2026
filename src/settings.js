@@ -19,12 +19,6 @@ class SettingsPage {
     loadSettings() {
         const settings = dataStore.getAllSettings();
 
-        // API Key
-        const apiKeyInput = document.getElementById('settingsApiKey');
-        if (apiKeyInput) {
-            apiKeyInput.value = settings.apiKey ? settings.apiKey.substring(0, 15) + '...' : '';
-        }
-
         // Toggles
         this.setToggle('audioAlerts', settings.audioAlerts);
         this.setToggle('incidentNotifications', settings.incidentNotifications);
@@ -89,11 +83,7 @@ class SettingsPage {
             select.addEventListener('change', (e) => this.handleSelectChange(e));
         });
 
-        // API Key update
-        const updateApiBtn = document.querySelector('.input-group .btn');
-        if (updateApiBtn) {
-            updateApiBtn.addEventListener('click', () => this.updateApiKey());
-        }
+
 
         // Export data
         const exportBtn = document.querySelector('[onclick*="export"], .btn--outline:has(svg)');
@@ -159,22 +149,7 @@ class SettingsPage {
         }
     }
 
-    updateApiKey() {
-        const input = document.getElementById('settingsApiKey');
-        if (input && input.value && !input.value.includes('...')) {
-            dataStore.setSetting('apiKey', input.value);
-            input.value = input.value.substring(0, 15) + '...';
-            this.showToast('API Key updated successfully');
-        } else {
-            // Show modal to enter new key
-            const newKey = prompt('Enter your Overshoot API Key:');
-            if (newKey) {
-                dataStore.setSetting('apiKey', newKey);
-                input.value = newKey.substring(0, 15) + '...';
-                this.showToast('API Key updated successfully');
-            }
-        }
-    }
+
 
     exportData() {
         const data = dataStore.exportData();
