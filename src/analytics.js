@@ -336,7 +336,7 @@ class AnalyticsPage {
 
         // Listen for storage events from other tabs (dashboard)
         window.addEventListener('storage', (e) => {
-            if (e.key === 'traffiq_data') {
+            if (e.key === 'trafiq_data') {
                 // Reload data from localStorage
                 dataStore.data = dataStore.load();
                 this.populateCameraFilter(); // Reload filter in case new camera appeared
@@ -354,14 +354,14 @@ class AnalyticsPage {
             csv += `${date},${data.vehicles},${data.incidents},${data.sessions}\n`;
         });
 
-        this.downloadFile(csv, 'traffiq-analytics.csv', 'text/csv');
+        this.downloadFile(csv, 'trafiq-analytics.csv', 'text/csv');
         this.showToast('CSV exported successfully');
     }
 
     exportPDF() {
         const summary = dataStore.getAnalyticsSummary();
         const report = `
-TraffiQ Traffic Analysis Report
+TrafiQ Traffic Analysis Report
 Generated: ${new Date().toLocaleString()}
 
 SUMMARY
@@ -380,7 +380,7 @@ BUSIEST INTERSECTIONS
 ${dataStore.getBusiestIntersections().map((int, i) => `${i + 1}. ${int.name} - ${int.vehicles} vehicles`).join('\n')}
         `;
 
-        this.downloadFile(report, 'traffiq-report.txt', 'text/plain');
+        this.downloadFile(report, 'trafiq-report.txt', 'text/plain');
         this.showToast('Report exported successfully');
     }
 

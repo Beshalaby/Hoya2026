@@ -1,6 +1,6 @@
-# Deploying TraffiQ to Vultr
+# Deploying TrafiQ to Vultr
 
-This guide will walk you through deploying the TraffiQ application to a Vultr Cloud Compute instance.
+This guide will walk you through deploying the TrafiQ application to a Vultr Cloud Compute instance.
 
 ## 1. Prerequisites (Vultr)
 

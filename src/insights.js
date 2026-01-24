@@ -312,7 +312,7 @@ class InsightsPage {
 
         // Sync across tabs
         window.addEventListener('storage', (e) => {
-            if (e.key === 'traffiq_data') {
+            if (e.key === 'trafiq_data') {
                 dataStore.data = dataStore.load();
                 this.populateCameraFilter();
                 this.loadInsights();
@@ -326,7 +326,7 @@ class InsightsPage {
             return;
         }
 
-        const report = `TRAFFIQ AI INSIGHTS REPORT
+        const report = `TRAFIQ AI INSIGHTS REPORT
 Generated: ${new Date().toLocaleString()}
 
 RECOMMENDATIONS
@@ -338,7 +338,7 @@ ${this.suggestions.map((s, i) => `${i + 1}. [${s.priority.toUpperCase()}] ${s.ti
         const blob = new Blob([report], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `traffiq-insights-${new Date().toISOString().split('T')[0]}.txt`;
+        a.download = `trafiq-insights-${new Date().toISOString().split('T')[0]}.txt`;
         a.click();
         this.showToast('Report exported');
     }

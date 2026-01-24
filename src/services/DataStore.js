@@ -1,6 +1,6 @@
 /**
  * DataStore Service
- * Handles localStorage persistence for TraffiQ application
+ * Handles localStorage persistence for TrafiQ application
  */
 export class DataStore {
     constructor() {

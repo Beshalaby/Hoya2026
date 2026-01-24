@@ -561,7 +561,7 @@ export class InteractiveMap {
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
                     ${camera.type !== 'official' ? `
-                    <button class="popup-btn" style="background: var(--color-danger);" onclick="window.traffiQ?.removeCamera('${camera.id}')">
+                    <button class="popup-btn" style="background: var(--color-danger);" onclick="window.trafiQ?.removeCamera('${camera.id}')">
                         Delete
                     </button>
                     ` : ''}

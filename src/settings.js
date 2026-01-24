@@ -160,7 +160,7 @@ class SettingsPage {
 
     exportData() {
         const data = dataStore.exportData();
-        this.downloadFile(data, 'traffiq-data.json', 'application/json');
+        this.downloadFile(data, 'trafiq-data.json', 'application/json');
         this.showToast('Data exported successfully');
     }
 
@@ -176,7 +176,7 @@ class SettingsPage {
             csv += `${new Date().toISOString().split('T')[0]},0,0,0\n`;
         }
 
-        this.downloadFile(csv, 'traffiq-analytics.csv', 'text/csv');
+        this.downloadFile(csv, 'trafiq-analytics.csv', 'text/csv');
         this.showToast('CSV exported successfully');
     }
 
@@ -184,7 +184,7 @@ class SettingsPage {
         // For now, create a printable report
         const summary = dataStore.getAnalyticsSummary();
         const report = `
-TraffiQ Traffic Analysis Report
+TrafiQ Traffic Analysis Report
 Generated: ${new Date().toLocaleString()}
 
 SUMMARY
@@ -204,7 +204,7 @@ BUSIEST INTERSECTIONS
 ${dataStore.getBusiestIntersections().map((int, i) => `${i + 1}. ${int.name} - ${int.vehicles} vehicles (${int.congestion})`).join('\n')}
         `;
 
-        this.downloadFile(report, 'traffiq-report.txt', 'text/plain');
+        this.downloadFile(report, 'trafiq-report.txt', 'text/plain');
         this.showToast('Report exported successfully');
     }
 
