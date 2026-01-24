@@ -20,18 +20,10 @@ import { authService } from './src/services/AuthService.js';
  */
 class TraffIQApp {
     constructor() {
-        // Check if user is logged in
-        if (!authService.requireAuth('/login.html')) {
-            return; // Will redirect to login
-        }
-
         // Setup user menu
         this.setupUserMenu();
 
-        // Default API key (can be overridden via modal)
-        this.defaultApiKey = import.meta.env.VITE_OVERSHOOT_API_KEY;
-
-        // Initialize components
+        // Initialize properties
         this.analyzer = null;
         this.videoFeed = null;
         this.heatmap = null;
@@ -54,30 +46,41 @@ class TraffIQApp {
         this.apiKeySave = document.getElementById('apiKeySave');
         this.loadingOverlay = document.getElementById('statsLoadingOverlay');
 
-        this.init();
+        // DEV: Auto-login if needed (for demo/review purposes)
+        this.ensureAuth().then(() => {
+            this.init();
+        });
+    }
+
+    /**
+     * Ensure user is authenticated (auto-create demo user if needed)
+     */
+    async ensureAuth() {
+        if (authService.isLoggedIn()) return;
+
+        console.log('🔄 Auto-creating demo user...');
+        try {
+            await authService.register('demo@traffiq.ai', 'demo123', 'Demo User');
+            console.log('✅ Demo user created and logged in');
+
+            // Refresh page to ensure clean state or just let init proceed?
+            // Auth service register calls createSession, so we are good.
+        } catch (e) {
+            // Might already exist but session expired? Try login.
+            try {
+                await authService.login('demo@traffiq.ai', 'demo123');
+                console.log('✅ Demo user logged in');
+            } catch (loginErr) {
+                console.error('Auth failed:', loginErr);
+            }
+        }
     }
 
     async init() {
         console.log('🚦 TraffIQ Dashboard initializing...');
+        console.log('🔒 Auth status:', authService.isLoggedIn());
 
-        // Initialize AI analyzer
-        this.analyzer = new TrafficAnalyzer({
-            apiKey: this.defaultApiKey,
-            onResult: (data) => this.handleAIResult(data),
-            onError: (error) => this.handleError(error),
-            onStatusChange: (status) => this.updateConnectionStatus(status)
-        });
-
-        // Check for saved API key
-        const savedKey = this.analyzer.getSavedApiKey();
-        if (savedKey) {
-            this.analyzer.setApiKey(savedKey);
-        } else {
-            // Use default key
-            this.analyzer.setApiKey(this.defaultApiKey);
-        }
-
-        // Initialize UI components
+        // Initialize UI components first to allow user interaction
         this.videoFeed = new VideoFeed({
             onCameraSelect: () => this.startCameraAnalysis(),
             onVideoUpload: (file) => this.startVideoAnalysis(file),
@@ -108,9 +111,37 @@ class TraffIQApp {
         this.setupEventListeners();
         this.setupResizer();
 
+        // Initialize Analyzer logic
+        this.initializeAnalyzer();
+
         console.log('✅ TraffIQ Dashboard ready');
         console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, ?=Help');
-        this.updateConnectionStatus('ready');
+    }
+
+    /**
+     * Initialize the traffic analyzer logic
+     */
+    initializeAnalyzer() {
+        // Initialize AI analyzer with empty params
+        this.analyzer = new TrafficAnalyzer({
+            apiKey: '', // Start empty
+            onResult: (data) => this.handleAIResult(data),
+            onError: (error) => this.handleError(error),
+            onStatusChange: (status) => this.updateConnectionStatus(status)
+        });
+
+        // Check for saved API key
+        const savedKey = this.analyzer.getSavedApiKey();
+        if (savedKey) {
+            this.analyzer.setApiKey(savedKey);
+            this.updateConnectionStatus('ready');
+        } else {
+            // No key found, prompt user
+            console.log('🔑 No API key found, prompting user...');
+            this.updateConnectionStatus('disconnected');
+            // Small delay to ensure UI is ready
+            setTimeout(() => this.openApiKeyModal(), 500);
+        }
     }
 
     /**
@@ -632,6 +663,18 @@ ESC   - Stop demo / close modals
      */
     handleError(error) {
         console.error('❌ Error:', error);
+
+        // Handle API Key errors specifically
+        const errorMsg = (error.message || '').toString().toLowerCase();
+        if (errorMsg.includes('unauthorized') || errorMsg.includes('api key') || errorMsg.includes('401')) {
+            console.log('🔒 Auth error detected, prompting for key...');
+            this.updateConnectionStatus('error');
+            this.openApiKeyModal();
+            // Show user friendly message in overlay
+            this.videoFeed?.setStatus('error', 'API Key expired or invalid. Please check settings.');
+            return;
+        }
+
         this.updateConnectionStatus('error');
         this.videoFeed?.setStatus('error', error.message || 'An error occurred');
     }
@@ -811,7 +854,7 @@ ESC   - Stop demo / close modals
 // Initialize the app when DOM is ready
 const initApp = () => {
     if (window.traffiQ) return;
-    window.traffiQ = new TraffiQApp();
+    window.traffiQ = new TraffIQApp();
 
     // Cleanup on page unload to prevent zombie streams
     window.addEventListener('beforeunload', () => {
