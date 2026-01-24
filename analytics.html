@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analytics - TraffIQ</title>
+    <meta name="description" content="Traffic analytics and historical data" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+    <script type="module" src="/src/analytics.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header__brand">
+                <a href="/" class="header__logo-link">
+                    <img src="/logo.svg" alt="TraffIQ" style="height: 28px; margin-right: 8px;">
+                </a>
+                <span class="header__title">TraffIQ</span>
+                <span class="header__subtitle">AI Traffic Control</span>
+            </div>
+            <nav class="header__nav">
+                <a href="/dashboard.html" class="nav-btn">Dashboard</a>
+                <a href="/analytics.html" class="nav-btn nav-btn--active">Analytics</a>
+                <a href="/settings.html" class="nav-btn">Settings</a>
+            </nav>
+            <div class="header__actions">
+                <div class="camera-filter-container">
+                    <select id="analyticsCameraFilter" class="select select--sm">
+                        <option value="">All Cameras</option>
+                    </select>
+                </div>
+
+                <div class="status-pill">
+                    <span class="status-pill__dot"></span>
+                    <span class="status-pill__text">Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Analytics Content -->
+        <main class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Traffic Analytics</h1>
+                <p class="page-description">Historical data and traffic patterns</p>
+            </div>
+
+            <div class="analytics-grid">
+                <!-- Summary Cards -->
+                <div class="summary-row">
+                    <div class="summary-card">
+                        <div class="summary-card__icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                        </div>
+                        <div class="summary-card__content">
+                            <span class="summary-card__value" id="totalVehicles">0</span>
+                            <span class="summary-card__label">Total Vehicles Today</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card__icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="summary-card__content">
+                            <span class="summary-card__value" id="avgWaitTime">0s</span>
+                            <span class="summary-card__label">Avg Wait Time</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card__icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                                </path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="summary-card__content">
+                            <span class="summary-card__value" id="incidentsToday">0</span>
+                            <span class="summary-card__label">Incidents Today</span>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card__icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="summary-card__content">
+                            <span class="summary-card__value" id="flowEfficiency">0%</span>
+                            <span class="summary-card__label">Flow Efficiency</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Area -->
+                <div class="card card--chart">
+                    <div class="card__header">
+                        <h2 class="card__title">Traffic Volume (Last 24 Hours)</h2>
+                        <div class="card__actions">
+                            <button class="chip chip--active">Hourly</button>
+                            <button class="chip">Daily</button>
+                            <button class="chip">Weekly</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-placeholder">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <line x1="18" y1="20" x2="18" y2="10" />
+                                <line x1="12" y1="20" x2="12" y2="4" />
+                                <line x1="6" y1="20" x2="6" y2="14" />
+                            </svg>
+                            <p>Historical chart data</p>
+                            <span class="chart-placeholder__note">Run demo mode on the dashboard to generate data</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Grid -->
+                <div class="analytics-columns">
+                    <!-- Peak Hours -->
+                    <div class="card">
+                        <div class="card__header">
+                            <h2 class="card__title">Peak Traffic Hours</h2>
+                        </div>
+                        <div class="peak-hours-list">
+                            <div class="peak-hour-item">
+                                <span class="peak-hour-item__time">8:00 AM</span>
+                                <div class="peak-hour-item__bar" style="width: 95%"></div>
+                                <span class="peak-hour-item__value">2,340</span>
+                            </div>
+                            <div class="peak-hour-item">
+                                <span class="peak-hour-item__time">5:00 PM</span>
+                                <div class="peak-hour-item__bar" style="width: 88%"></div>
+                                <span class="peak-hour-item__value">2,180</span>
+                            </div>
+                            <div class="peak-hour-item">
+                                <span class="peak-hour-item__time">6:00 PM</span>
+                                <div class="peak-hour-item__bar" style="width: 75%"></div>
+                                <span class="peak-hour-item__value">1,890</span>
+                            </div>
+                            <div class="peak-hour-item">
+                                <span class="peak-hour-item__time">9:00 AM</span>
+                                <div class="peak-hour-item__bar" style="width: 65%"></div>
+                                <span class="peak-hour-item__value">1,620</span>
+                            </div>
+                            <div class="peak-hour-item">
+                                <span class="peak-hour-item__time">12:00 PM</span>
+                                <div class="peak-hour-item__bar" style="width: 50%"></div>
+                                <span class="peak-hour-item__value">1,240</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Intersections -->
+                    <div class="card">
+                        <div class="card__header">
+                            <h2 class="card__title">Busiest Intersections</h2>
+                        </div>
+                        <div class="intersections-list">
+                            <div class="intersection-item">
+                                <span class="intersection-item__rank">1</span>
+                                <div class="intersection-item__info">
+                                    <span class="intersection-item__name">Times Square</span>
+                                    <span class="intersection-item__stats">4,230 vehicles</span>
+                                </div>
+                                <span class="intersection-item__status intersection-item__status--high">High</span>
+                            </div>
+                            <div class="intersection-item">
+                                <span class="intersection-item__rank">2</span>
+                                <div class="intersection-item__info">
+                                    <span class="intersection-item__name">Herald Square</span>
+                                    <span class="intersection-item__stats">3,890 vehicles</span>
+                                </div>
+                                <span class="intersection-item__status intersection-item__status--medium">Medium</span>
+                            </div>
+                            <div class="intersection-item">
+                                <span class="intersection-item__rank">3</span>
+                                <div class="intersection-item__info">
+                                    <span class="intersection-item__name">Penn Station</span>
+                                    <span class="intersection-item__stats">3,450 vehicles</span>
+                                </div>
+                                <span class="intersection-item__status intersection-item__status--medium">Medium</span>
+                            </div>
+                            <div class="intersection-item">
+                                <span class="intersection-item__rank">4</span>
+                                <div class="intersection-item__info">
+                                    <span class="intersection-item__name">Bryant Park</span>
+                                    <span class="intersection-item__stats">2,870 vehicles</span>
+                                </div>
+                                <span class="intersection-item__status intersection-item__status--low">Low</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Section -->
+                <div class="card">
+                    <div class="card__header">
+                        <h2 class="card__title">Export Data</h2>
+                    </div>
+                    <div class="export-section">
+                        <p class="export-section__description">Download historical traffic data for analysis</p>
+                        <div class="export-section__actions">
+                            <button class="btn btn--outline">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Export CSV
+                            </button>
+                            <button class="btn btn--outline">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                Export PDF Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <style>
+        /* Analytics Page Specific Styles */
+        .page-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-description {
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .analytics-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .summary-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+        }
+
+        .summary-card__icon {
+            font-size: 1.5rem;
+        }
+
+        .summary-card__value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .summary-card__label {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+
+        .card--chart {
+            min-height: 350px;
+        }
+
+        .chart-container {
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-placeholder {
+            text-align: center;
+            color: var(--color-text-muted);
+        }
+
+        .chart-placeholder svg {
+            opacity: 0.3;
+            margin-bottom: 1rem;
+        }
+
+        .chart-placeholder p {
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .chart-placeholder__note {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .analytics-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .peak-hours-list {
+            padding: 1rem;
+        }
+
+        .peak-hour-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .peak-hour-item:last-child {
+            border-bottom: none;
+        }
+
+        .peak-hour-item__time {
+            width: 70px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .peak-hour-item__bar {
+            flex: 1;
+            height: 8px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent, #8b5cf6));
+            border-radius: 4px;
+        }
+
+        .peak-hour-item__value {
+            width: 50px;
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+
+        .intersections-list {
+            padding: 0.5rem 1rem;
+        }
+
+        .intersection-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .intersection-item:last-child {
+            border-bottom: none;
+        }
+
+        .intersection-item__rank {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg-elevated);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .intersection-item__info {
+            flex: 1;
+        }
+
+        .intersection-item__name {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .intersection-item__stats {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+
+        .intersection-item__status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .intersection-item__status--low {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--color-traffic-low);
+        }
+
+        .intersection-item__status--medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--color-traffic-medium);
+        }
+
+        .intersection-item__status--high {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--color-traffic-high);
+        }
+
+        .export-section {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .export-section__description {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .export-section__actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        @media (max-width: 900px) {
+            .summary-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .analytics-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Log List Styles */
+        .log-list {
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-item__content {
+            flex: 1;
+        }
+
+        .log-item__text {
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .log-item__meta {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+
+        .empty-state {
+            padding: 2rem;
+            text-align: center;
+            color: var(--color-text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</body>
+
+</html>

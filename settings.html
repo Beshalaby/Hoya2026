@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings - TraffIQ</title>
+    <meta name="description" content="TraffIQ settings and configuration" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+    <script type="module" src="/src/settings.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header__brand">
+                <a href="/" class="header__logo-link">
+                    <img src="/logo.svg" alt="TraffIQ" style="height: 28px; margin-right: 8px;">
+                </a>
+                <span class="header__title">TraffIQ</span>
+                <span class="header__subtitle">AI Traffic Control</span>
+            </div>
+            <nav class="header__nav">
+                <a href="/dashboard.html" class="nav-btn">Dashboard</a>
+                <a href="/analytics.html" class="nav-btn">Analytics</a>
+                <a href="/settings.html" class="nav-btn nav-btn--active">Settings</a>
+            </nav>
+            <div class="header__actions">
+                <div class="status-pill">
+                    <span class="status-pill__dot"></span>
+                    <span class="status-pill__text">Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Settings Content -->
+        <main class="page-content">
+            <div class="page-header">
+                <h1 class="page-title">Settings</h1>
+                <p class="page-description">Configure your TraffIQ dashboard</p>
+            </div>
+
+            <div class="settings-grid">
+
+                <!-- API Configuration -->
+                <div class="card settings-card">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                            </svg>
+                            API Configuration
+                        </h2>
+                    </div>
+                    <div class="settings-card__content">
+                        <div class="form-group">
+                            <label class="form-label">Overshoot API Key</label>
+                            <div class="input-group">
+                                <input type="password" class="input" id="settingsApiKey" placeholder="ovs_..."
+                                    value="ovs_5c70b4ab...">
+                                <button class="btn btn--outline btn--sm">Update</button>
+                            </div>
+                            <p class="form-hint">Get your API key from <a href="https://platform.overshoot.ai/api-keys"
+                                    target="_blank">platform.overshoot.ai</a></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Connection Status</label>
+                            <div class="status-indicator status-indicator--connected">
+                                <span class="status-indicator__dot"></span>
+                                <span>Connected to Overshoot API</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="card settings-card">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                            Notifications
+                        </h2>
+                    </div>
+                    <div class="settings-card__content">
+                        <div class="setting-row">
+                            <div class="setting-row__info">
+                                <span class="setting-row__label">Audio Alerts</span>
+                                <span class="setting-row__description">Play sounds for critical traffic events</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle__slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-row__info">
+                                <span class="setting-row__label">Incident Notifications</span>
+                                <span class="setting-row__description">Alert for collisions and near-misses</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle__slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-row__info">
+                                <span class="setting-row__label">Congestion Warnings</span>
+                                <span class="setting-row__description">Notify when traffic exceeds thresholds</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle__slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Settings -->
+                <div class="card settings-card">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                <line x1="8" y1="21" x2="16" y2="21" />
+                                <line x1="12" y1="17" x2="12" y2="21" />
+                            </svg>
+                            Display
+                        </h2>
+                    </div>
+                    <div class="settings-card__content">
+                        <div class="setting-row">
+                            <div class="setting-row__info">
+                                <span class="setting-row__label">Heatmap Overlay</span>
+                                <span class="setting-row__description">Show traffic intensity on map</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle__slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-row__info">
+                                <span class="setting-row__label">Live Vehicle Counts</span>
+                                <span class="setting-row__description">Display real-time counting</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle__slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label class="form-label">Map Style</label>
+                            <select class="input select">
+                                <option value="dark">Dark (Default)</option>
+                                <option value="satellite">Satellite</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Settings -->
+                <div class="card settings-card">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                            </svg>
+                            Camera & Video
+                        </h2>
+                    </div>
+                    <div class="settings-card__content">
+                        <div class="form-group">
+                            <label class="form-label">Default Camera</label>
+                            <select class="input select">
+                                <option value="user">Front Camera</option>
+                                <option value="environment" selected>Rear Camera</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Analysis Frame Rate</label>
+                            <select class="input select">
+                                <option value="1">1 FPS (Low bandwidth)</option>
+                                <option value="2" selected>2 FPS (Recommended)</option>
+                                <option value="5">5 FPS (High accuracy)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data & Privacy -->
+                <div class="card settings-card">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            Data & Privacy
+                        </h2>
+                    </div>
+                    <div class="settings-card__content">
+                        <div class="setting-row">
+                            <div class="setting-row__info">
+                                <span class="setting-row__label">Save Historical Data</span>
+                                <span class="setting-row__description">Store traffic data for analytics</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" checked>
+                                <span class="toggle__slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label class="form-label">Data Retention</label>
+                            <select class="input select">
+                                <option value="7">7 Days</option>
+                                <option value="30" selected>30 Days</option>
+                                <option value="90">90 Days</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                        <div class="action-buttons" style="margin-top: 1.5rem;">
+                            <button class="btn btn--outline btn--sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Export All Data
+                            </button>
+                            <button class="btn btn--danger btn--sm">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                                Clear All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About -->
+                <div class="card settings-card">
+                    <div class="card__header">
+                        <h2 class="card__title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            About TraffIQ
+                        </h2>
+                    </div>
+                    <div class="settings-card__content">
+                        <div class="about-info">
+                            <div class="about-info__row">
+                                <span class="about-info__label">Version</span>
+                                <span class="about-info__value">1.0.0</span>
+                            </div>
+                            <div class="about-info__row">
+                                <span class="about-info__label">AI Engine</span>
+                                <span class="about-info__value">Overshoot Traffic Analyzer</span>
+                            </div>
+                            <div class="about-info__row">
+                                <span class="about-info__label">Last Updated</span>
+                                <span class="about-info__value">January 2026</span>
+                            </div>
+                        </div>
+                        <div class="about-links">
+                            <a href="#" class="about-link">Documentation</a>
+                            <a href="#" class="about-link">Release Notes</a>
+                            <a href="#" class="about-link">Support</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <style>
+        /* Settings Page Specific Styles */
+        .page-content {
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .page-description {
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .settings-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .settings-card__content {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .form-hint a {
+            color: var(--color-primary);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-group .input {
+            flex: 1;
+        }
+
+        .select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.5rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--color-bg-elevated);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .status-indicator__dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-indicator--connected .status-indicator__dot {
+            background: var(--color-success);
+            box-shadow: 0 0 8px var(--color-success);
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-row__label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .setting-row__description {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle__slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--color-bg-elevated);
+            border: 1px solid var(--color-border);
+            border-radius: 24px;
+            transition: 200ms;
+        }
+
+        .toggle__slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--color-text-muted);
+            border-radius: 50%;
+            transition: 200ms;
+        }
+
+        .toggle input:checked+.toggle__slider {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .toggle input:checked+.toggle__slider:before {
+            background: white;
+            transform: translateX(20px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .about-info {
+            margin-bottom: 1rem;
+        }
+
+        .about-info__row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .about-info__row:last-child {
+            border-bottom: none;
+        }
+
+        .about-info__label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+
+        .about-info__value {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .about-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .about-link {
+            font-size: 0.875rem;
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        .about-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</body>
+
+</html>

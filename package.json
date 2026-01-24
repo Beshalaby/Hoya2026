@@ -1,0 +1,21 @@
+{
+  "name": "traffiq",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "tunnel": "ngrok http 5173",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "@overshoot/sdk": "^0.1.0-alpha.3",
+    "hls.js": "^1.6.15",
+    "leaflet": "^1.9.4",
+    "leaflet.heat": "^0.2.0"
+  }
+}

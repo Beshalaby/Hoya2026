@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TraffIQ - AI-Powered Traffic Optimization</title>
+  <meta name="description" content="Real-time AI traffic analysis and optimization for smarter cities" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/landing.css">
+</head>
+
+<body>
+  <div id="landing-app">
+
+    <!-- Navigation -->
+    <nav class="landing-nav">
+      <div class="landing-nav__container">
+        <a href="/" class="landing-nav__brand">
+
+          <img src="/logo.svg" alt="TraffIQ Logo" style="height: 32px; width: 32px; margin-right: 10px;">
+          <span>TraffIQ</span>
+        </a>
+        <div class="landing-nav__links">
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#pricing">Pricing</a>
+        </div>
+        <div class="landing-nav__actions">
+          <a href="/login.html" class="btn btn--ghost">Sign In</a>
+          <a href="/login.html" class="btn btn--primary">Get Started</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero__overlay"></div>
+      <div class="hero__container">
+        <div class="hero__top reveal-on-scroll delay-100">
+          <h1 class="hero__title hero__title--massive">
+            Smarter Planning
+          </h1>
+          <p class="hero__title-sub"
+            style="font-size: clamp(1.5rem, 4vw, 3rem); font-weight: 400; color: rgba(255, 255, 255, 0.7); margin-top: -1rem; margin-bottom: 2rem;">
+            reduces traffic
+          </p>
+        </div>
+
+        <div class="hero__middle reveal-on-scroll delay-200">
+          <div class="hero__intro">
+            <h4>Eliminating traffic with<br>visual intelligence</h4>
+          </div>
+          <div class="hero__description-text">
+            <p>TraffIQ transforms urban mobility with computer vision and machine learning. We provide real-time
+              insights, predictive modeling, and automated signal control to eliminate congestion and improve safety.
+            </p>
+          </div>
+        </div>
+
+        <div class="hero__grid reveal-on-scroll delay-300">
+          <div class="hero__grid-item">
+            <div class="grid-header">
+              <span class="grid-number">01</span>
+              <span class="grid-title">Real-Time Vision</span>
+            </div>
+            <p class="grid-text">Process millions of video frames instantly to detect vehicles, pedestrians, and
+              anomalies with 99.9% accuracy.</p>
+          </div>
+          <div class="hero__grid-item">
+            <div class="grid-header">
+              <span class="grid-number">02</span>
+              <span class="grid-title">Smart Signals</span>
+            </div>
+            <p class="grid-text">Dynamically adjust traffic light timing based on real-time flow demand to reduce wait
+              times by up to 40%.</p>
+          </div>
+          <div class="hero__grid-item">
+            <div class="grid-header">
+              <span class="grid-number">03</span>
+              <span class="grid-title">Predictive Modeling</span>
+            </div>
+            <p class="grid-text">Forecast congestion before it happens using historical data and weather patterns to
+              proactively manage flow.</p>
+          </div>
+          <div class="hero__grid-item">
+            <div class="grid-header">
+              <span class="grid-number">04</span>
+              <span class="grid-title">Incident Response</span>
+            </div>
+            <p class="grid-text">Automated detection of accidents and stalled vehicles to alert emergency services and
+              reroute traffic immediately.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features reveal-on-scroll">
+      <div class="features__container">
+        <div class="section-header reveal-on-scroll">
+          <div>
+            <span class="section-tag">Core Capabilities</span>
+            <h2 class="section-title">The Operating System<br>For City Streets</h2>
+          </div>
+        </div>
+        <div class="features__grid">
+          <div class="feature-card reveal-on-scroll delay-100">
+            <div class="feature-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <h3 class="feature-card__title">Real-Time Video Analysis</h3>
+            <p class="feature-card__description">
+              AI-powered detection of vehicles, pedestrians, and incidents from any camera feed.
+            </p>
+          </div>
+          <div class="feature-card reveal-on-scroll delay-200">
+            <div class="feature-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                <line x1="8" y1="2" x2="8" y2="18" />
+                <line x1="16" y1="6" x2="16" y2="22" />
+              </svg>
+            </div>
+            <h3 class="feature-card__title">Interactive Heatmaps</h3>
+            <p class="feature-card__description">
+              Visualize congestion patterns across your entire city with real-time heatmaps.
+            </p>
+          </div>
+          <div class="feature-card reveal-on-scroll delay-300">
+            <div class="feature-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+              </svg>
+            </div>
+            <h3 class="feature-card__title">AI Predictions</h3>
+            <p class="feature-card__description">
+              Get ahead of congestion with predictive analytics and smart recommendations.
+            </p>
+          </div>
+          <div class="feature-card reveal-on-scroll delay-400">
+            <div class="feature-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+            </div>
+            <h3 class="feature-card__title">Instant Alerts</h3>
+            <p class="feature-card__description">
+              Receive immediate notifications for incidents, violations, and anomalies.
+            </p>
+          </div>
+          <div class="feature-card reveal-on-scroll delay-500">
+            <div class="feature-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                <line x1="1" y1="10" x2="23" y2="10" />
+              </svg>
+            </div>
+            <h3 class="feature-card__title">Signal Optimization</h3>
+            <p class="feature-card__description">
+              Get AI-driven recommendations for optimal traffic signal timing.
+            </p>
+          </div>
+          <div class="feature-card reveal-on-scroll delay-600">
+            <div class="feature-card__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </div>
+            <h3 class="feature-card__title">Data Export</h3>
+            <p class="feature-card__description">
+              Export historical data and reports for analysis and compliance.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-it-works reveal-on-scroll">
+      <div class="how-it-works__container">
+        <div class="section-header reveal-on-scroll">
+          <div>
+            <span class="section-tag">Deployment</span>
+            <h2 class="section-title">Zero Infrastructure<br>Overhead</h2>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="step reveal-on-scroll delay-100">
+            <div class="step__number">01</div>
+            <h3 class="step__title">Connect Your Cameras</h3>
+            <p class="step__description">
+              Link your existing traffic cameras or upload video feeds. Works with any standard camera system.
+            </p>
+          </div>
+          <div class="step reveal-on-scroll delay-200">
+            <div class="step__number">02</div>
+            <h3 class="step__title">Calibrate</h3>
+            <p class="step__description">
+              Our AI processes video in real-time, detecting vehicles, measuring flow, and identifying issues.
+            </p>
+          </div>
+          <div class="step reveal-on-scroll delay-300">
+            <div class="step__number">03</div>
+            <h3 class="step__title">Take Action</h3>
+            <p class="step__description">
+              Get actionable insights and recommendations. Optimize signals, respond to incidents, plan better.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section reveal-on-scroll">
+      <div class="cta-section__container">
+        <h2 class="cta-section__title">Ready to optimize your traffic?</h2>
+        <p class="cta-section__description">
+          Start using TraffIQ today. No credit card required.
+        </p>
+        <a href="/login.html" class="btn btn--primary btn--lg">
+          Get Started Free
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <div class="landing-footer__container">
+        <div class="landing-footer__brand">
+          <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2.5" />
+            <path d="M10 16h12M16 10v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="16" cy="16" r="3" fill="currentColor" />
+          </svg>
+          <span>TraffIQ</span>
+        </div>
+        <div class="landing-footer__links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Documentation</a>
+          <a href="#">Support</a>
+        </div>
+        <div class="landing-footer__copyright">
+          © 2026 TraffIQ. AI-powered traffic optimization.
+        </div>
+      </div>
+    </footer>
+
+  </div>
+  <script src="/src/landing.js"></script>
+  <script type="module" src="/src/main.js"></script>
+  <script>
+    // Simple intersection observer for scroll reveals
+    document.addEventListener('DOMContentLoaded', () => {
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+
+      const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target); // Only animate once
+          }
+        });
+      }, observerOptions);
+
+      const elements = document.querySelectorAll('.reveal-on-scroll');
+      elements.forEach(el => observer.observe(el));
+    });
+  </script>
+</body>
+
+</html>
