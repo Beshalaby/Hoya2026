@@ -51,6 +51,13 @@ class TrafiQApp {
     }
 
     async init() {
+        console.log('🚦 TrafiQ Dashboard initializing...');
+        console.log('🔒 Auth status:', authService.isLoggedIn());
+
+        // Initialize Analyzer logic FIRST
+        this.initializeAnalyzer();
+
+        // Initialize UI components first to allow user interaction
         this.videoFeed = new VideoFeed({
             onCameraSelect: () => this.startCameraAnalysis(),
             onVideoUpload: (file) => this.startVideoAnalysis(file),
@@ -78,11 +85,13 @@ class TrafiQApp {
         this.setupEventListeners();
         this.setupResizer();
         this.setupAddCameraModal();
-        this.setupCustomDropdowns();
-        this.initializeAnalyzer();
+        UIUtils.setupCustomDropdowns();
+
+        // Initialize Voice Assistant
         this.initializeVoiceAssistant();
 
-        console.log('TrafiQ Dashboard ready');
+        console.log('✅ TrafiQ Dashboard ready');
+        console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, V=Voice, ?=Help');
     }
 
     setupAddCameraModal() {
