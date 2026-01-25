@@ -28,7 +28,7 @@
             <nav class="header__nav">
                 <a href="/dashboard.html" class="nav-btn">Dashboard</a>
                 <a href="/analytics.html" class="nav-btn nav-btn--active">Analytics</a>
-                <a href="/insights.html" class="nav-btn">AI Insights</a>
+                <a href="/insights.html" class="nav-btn">Insights</a>
                 <a href="/settings.html" class="nav-btn">Settings</a>
             </nav>
             <div class="header__actions">
@@ -91,21 +91,6 @@
                             <span class="summary-card__label">Visual Congestion</span>
                         </div>
                     </div>
-                    <div class="summary-card" id="avgQueueCard" style="display: none;">
-                        <div class="summary-card__icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                        </div>
-                        <div class="summary-card__content">
-                            <span class="summary-card__value" id="avgQueueLength">0m</span>
-                            <span class="summary-card__label">Avg Queue Length</span>
-                        </div>
-                    </div>
                     <div class="summary-card">
                         <div class="summary-card__icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -118,10 +103,6 @@
                             <span class="summary-card__label">Flow Efficiency</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Summary Cards Row 2 -->
-                <div class="summary-row">
                     <div class="summary-card">
                         <div class="summary-card__icon" style="color: var(--color-warning);">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -136,32 +117,6 @@
                         <div class="summary-card__content">
                             <span class="summary-card__value" id="incidentsToday">0</span>
                             <span class="summary-card__label">Incidents Today</span>
-                        </div>
-                    </div>
-                    <div class="summary-card summary-card--success">
-                        <div class="summary-card__icon" style="color: var(--color-success);">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="16 12 12 8 8 12"></polyline>
-                                <line x1="12" y1="16" x2="12" y2="8"></line>
-                            </svg>
-                        </div>
-                        <div class="summary-card__content">
-                            <span class="summary-card__value" id="timeSaved">0</span>
-                            <span class="summary-card__label">Minutes Saved</span>
-                        </div>
-                    </div>
-                    <div class="summary-card summary-card--success">
-                        <div class="summary-card__icon" style="color: #22c55e;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            </svg>
-                        </div>
-                        <div class="summary-card__content">
-                            <span class="summary-card__value" id="co2Saved">0</span>
-                            <span class="summary-card__label">kg CO₂ Saved</span>
                         </div>
                     </div>
                     <div class="summary-card" id="emergencyCard" style="display: none;">
@@ -347,7 +302,7 @@
 
         .summary-row {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 1rem;
         }
 

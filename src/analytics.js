@@ -73,10 +73,8 @@ class AnalyticsPage {
 
     updateRoadSpecificCardsVisibility() {
         // Always show these cards now that we have global aggregated data
-        const avgQueueCard = document.getElementById('avgQueueCard');
         const emergencyCard = document.getElementById('emergencyCard');
 
-        if (avgQueueCard) avgQueueCard.style.display = 'flex';
         if (emergencyCard) emergencyCard.style.display = 'flex';
     }
 
@@ -87,11 +85,8 @@ class AnalyticsPage {
         // Update summary card values by ID
         const totalVehiclesEl = document.getElementById('totalVehicles');
         const visualCongestionEl = document.getElementById('visualCongestion');
-        const avgQueueLengthEl = document.getElementById('avgQueueLength');
         const flowEfficiencyEl = document.getElementById('flowEfficiency');
         const incidentsTodayEl = document.getElementById('incidentsToday');
-        const timeSavedEl = document.getElementById('timeSaved');
-        const co2SavedEl = document.getElementById('co2Saved');
         const emergencyEventsEl = document.getElementById('emergencyEvents');
 
         if (totalVehiclesEl) {
@@ -100,11 +95,8 @@ class AnalyticsPage {
             totalVehiclesEl.textContent = Math.floor(Number(val)).toLocaleString();
         }
         if (visualCongestionEl) visualCongestionEl.textContent = summary.congestionScore || 'Low';
-        if (avgQueueLengthEl) avgQueueLengthEl.textContent = `${summary.avgQueueLength || 0}m`;
         if (flowEfficiencyEl) flowEfficiencyEl.textContent = `${summary.flowEfficiency || 0}%`;
         if (incidentsTodayEl) incidentsTodayEl.textContent = summary.incidentsToday || 0;
-        if (timeSavedEl) timeSavedEl.textContent = summary.timeSavedMinutes || 0;
-        if (co2SavedEl) co2SavedEl.textContent = summary.co2SavedKg || 0;
         if (emergencyEventsEl) emergencyEventsEl.textContent = summary.emergencyEvents || 0;
     }
 
