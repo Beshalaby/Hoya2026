@@ -6,10 +6,16 @@
 
 class VoiceAssistantService {
     constructor() {
-        // Default agent ID (kept for future ElevenLabs integration)
+        // Agent ID from environment or localStorage (no default fallback)
         this.agentId = localStorage.getItem('elevenlabs_agent_id') ||
             import.meta.env?.VITE_ELEVENLABS_AGENT_ID ||
-            'agent_2701kfqcg2j2f2ya0q143cn6afky';
+            '';
+        
+        // Warn if no agent ID is configured
+        if (!this.agentId) {
+            console.warn('⚠️ No ElevenLabs Agent ID configured. Voice assistant will not work. Please set VITE_ELEVENLABS_AGENT_ID in .env or configure in settings.');
+        }
+        
         this.enabled = localStorage.getItem('voice_assistant_enabled') !== 'false';
 
         this.isConnected = false;

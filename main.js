@@ -194,7 +194,8 @@ class TrafiQApp {
         } else if (envKey) {
             this.analyzer.setApiKey(envKey);
         } else {
-            this.analyzer.setApiKey('ovs_ad7c46804b149f5a6f169e8b59986328');
+            // No API key configured - user must provide one
+            console.warn('⚠️ No Overshoot API key configured. Please set VITE_OVERSHOOT_API_KEY in .env or configure in settings.');
         }
         this.updateConnectionStatus('ready');
     }
