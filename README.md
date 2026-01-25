@@ -1,3 +1,6 @@
+Introducing TrafIQ
+___________________
+
 Our friend's father owns a small traffic consulting business, and he described to us the manual labor in the traffic engineering profession. Skilled engineers sit at intersections for hours, buying expensive manual machines to count the number of cars passing by and log the average wait time at traffic lights. This manual labor naturally costs cities millions in time, fuel, and emergency response delays, as issues can take years to fix.
 
 TrafiQ automates these processes with real-time vision and AI insights. To demonstrate the product, we connected a few open-source Maryland DOT cams and private camera streams to the app. TrafiQ uses dynamic prompting on a custom TensorFlow model and Overshoot API to determine the number of lanes on the road, their directions, and the road's general layout. Using this information, the app continuously prompts the model for the number of vehicles and pedestrians, as well as for any outlier events, such as congestion or accidents. This data is displayed as real-time statistics and stored in a database, which the app then uses to generate AI reports and support historical analysis.
