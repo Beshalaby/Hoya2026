@@ -16,6 +16,11 @@ export class LocalCounter {
         this.classesOfInterest = ['car', 'bus', 'truck', 'motorcycle'];
         this.history = [];
         this.prevFrameData = null;
+
+        // Tracking State
+        this.tracks = []; // [{ id, bbox, class, age, missingFrames, counted }]
+        this.nextTrackId = 1;
+        this.cumulativeCounts = { car: 0, bus: 0, truck: 0, motorcycle: 0 };
     }
 
     /**
@@ -26,9 +31,10 @@ export class LocalCounter {
 
         try {
             console.log('🧠 Loading local AI model (Coco-SSD)...');
-            this.model = await cocoSsd.load();
+            // Upgrade to mobilenet_v2 for better accuracy in complex conditions (snow/rain)
+            this.model = await cocoSsd.load({ base: 'mobilenet_v2' });
             this.isLoaded = true;
-            console.log('✅ Local AI model loaded');
+            console.log('✅ Local AI model loaded (mobilenet_v2)');
         } catch (e) {
             console.error('Failed to load local AI:', e);
             throw e;
@@ -71,6 +77,10 @@ export class LocalCounter {
                 if (this.onCountUpdate) {
                     this.onCountUpdate(counts);
                 }
+
+                // DEBUG OVERLAY
+                this.drawDebugOverlay(predictions, lighting);
+
             } catch (e) {
                 // prediction error (e.g. context lost), ignore frame
             }
@@ -118,7 +128,21 @@ export class LocalCounter {
             pixelSamples++;
         }
         const avgBrightness = totalBrightness / pixelSamples;
-        const isNight = avgBrightness < 60; // Lowered to 60 to prevent false Night Mode on cloudy days
+
+        // 1. Time-Based Logic (Primary)
+        const now = new Date();
+        const hour = now.getHours();
+        const isDaytime = hour >= 6 && hour < 17; // 6:00 AM to 5:00 PM
+
+        // 2. Brightness Check (Fallback)
+        // If it's explicitly daytime, FORCE Night Mode OFF.
+        // Otherwise, trust the sensor (allows for dark storms or tunnel-like conditions)
+        let isNight = avgBrightness < 60;
+
+        if (isDaytime) {
+            // console.debug('☀️ Daytime override active');
+            isNight = false;
+        }
 
         // 2. BFS Blob Detection with Motion Filter
         // Only run detailed analysis if it IS night (save CPU)
@@ -226,76 +250,199 @@ export class LocalCounter {
     }
 
     processPredictions(predictions, lighting = { isNight: false, blobCount: 0, avg: 0 }) {
-        const counts = {
-            car: 0,
-            bus: 0,
-            truck: 0,
-            motorcycle: 0,
-            total: 0,
-            isNightMode: lighting.isNight
-        };
+        // --- 1. Filter Valid Predictions ---
+        const validPredictions = predictions.filter(p =>
+            this.classesOfInterest.includes(p.class) && p.score > 0.10
+        );
 
-        // Standard AI counting
-        let aiTotal = 0;
-        predictions.forEach(p => {
-            // High Angle Optimization: Lower scoring threshold (0.25) for small distant cars
-            if (this.classesOfInterest.includes(p.class) && p.score > 0.25) {
-                counts[p.class] = (counts[p.class] || 0) + 1;
-                aiTotal++;
+        // --- 2. Update Tracks (Simple IoU Matcher) ---
+        const updatedTracks = [];
+        const unassignedPreds = [...validPredictions];
+
+        this.tracks.forEach(track => {
+            // Find best match
+            let bestMatchIdx = -1;
+            let bestIoU = 0;
+
+            unassignedPreds.forEach((pred, idx) => {
+                const iou = this.calculateIoU(track.bbox, pred.bbox);
+                if (iou > 0.15 && iou > bestIoU && track.class === pred.class) { // Low IoU threshold for fast cars
+                    bestIoU = iou;
+                    bestMatchIdx = idx;
+                }
+            });
+
+            if (bestMatchIdx !== -1) {
+                // Matched! Update track
+                const match = unassignedPreds[bestMatchIdx];
+                track.bbox = match.bbox;
+                track.score = match.score;
+                track.age++;
+                track.missingFrames = 0;
+                updatedTracks.push(track);
+
+                // Remove from unassigned
+                unassignedPreds.splice(bestMatchIdx, 1);
+            } else {
+                // Not matched
+                track.missingFrames++;
+                if (track.missingFrames < 10) { // Keep track alive for a bit
+                    updatedTracks.push(track);
+                }
             }
         });
 
-        // Night Mode Fallback
-        // If it's night AND AI sees very little, but we see lights -> Use light estimation
-        if (lighting.isNight && aiTotal < 2 && lighting.blobCount > 0) {
-            const estimatedCars = this.estimateFromLights(lighting.blobCount);
-
-            // If lights indicate more cars than AI, assume AI failed due to darkness
-            if (estimatedCars > aiTotal) {
-                console.debug(`🌙 Night Mode: AI saw ${aiTotal}, Lights suggest ~${estimatedCars}`);
-                // Add difference as 'car' (safest assumption)
-                counts.car += (estimatedCars - aiTotal);
-            }
-        }
-
-        // Recalculate total
-        counts.total = counts.car + counts.bus + counts.truck + counts.motorcycle;
-
-        // --- Smoothing Filter ---
-        // Push raw counts to history buffer
-        this.history.push(counts);
-        if (this.history.length > 12) this.history.shift(); // Keep ~2 seconds buffer (at 5fps)
-
-        // Calculate Average
-        const smoothed = {
-            car: 0, bus: 0, truck: 0, motorcycle: 0, total: 0,
-            isNightMode: lighting.isNight
-        };
-
-        this.history.forEach(c => {
-            smoothed.car += c.car;
-            smoothed.bus += c.bus;
-            smoothed.truck += c.truck;
-            smoothed.motorcycle += c.motorcycle;
+        // --- 3. Create New Tracks ---
+        unassignedPreds.forEach(pred => {
+            updatedTracks.push({
+                id: this.nextTrackId++,
+                bbox: pred.bbox,
+                class: pred.class,
+                score: pred.score,
+                age: 1,
+                missingFrames: 0,
+                counted: false
+            });
         });
 
-        // Average (Do NOT round, keep precision for DataStore accumulation)
-        const len = this.history.length;
-        if (len > 0) {
-            smoothed.car = smoothed.car / len;
-            smoothed.bus = smoothed.bus / len;
-            smoothed.truck = smoothed.truck / len;
-            smoothed.motorcycle = smoothed.motorcycle / len;
-            smoothed.total = smoothed.car + smoothed.bus + smoothed.truck + smoothed.motorcycle;
-        }
+        this.tracks = updatedTracks;
 
-        return smoothed;
+        // --- 4. Count Stable Tracks --> Cumulative ---
+        this.tracks.forEach(track => {
+            if (!track.counted && track.age >= 1) { // Count immediately (age >= 1)
+                track.counted = true;
+                this.cumulativeCounts[track.class] = (this.cumulativeCounts[track.class] || 0) + 1;
+                console.log(`🚗 Counted new ${track.class} (ID: ${track.id})! Total: ${this.cumulativeCounts[track.class]}`);
+            }
+        });
+
+        // Return CUMULATIVE counts for the dashboard
+        // Also include current counts for debug if needed, but UI wants to "increment"
+        return {
+            ...this.cumulativeCounts,
+            total: Object.values(this.cumulativeCounts).reduce((a, b) => a + b, 0),
+            isNightMode: lighting.isNight,
+            // Debug: Current visible
+            currentVisible: updatedTracks.filter(t => t.missingFrames === 0).length
+        };
+    }
+
+    calculateIoU(bbox1, bbox2) {
+        const [x1, y1, w1, h1] = bbox1;
+        const [x2, y2, w2, h2] = bbox2;
+
+        const xA = Math.max(x1, x2);
+        const yA = Math.max(y1, y2);
+        const xB = Math.min(x1 + w1, x2 + w2);
+        const yB = Math.min(y1 + h1, y2 + h2);
+
+        const interW = Math.max(0, xB - xA);
+        const interH = Math.max(0, yB - yA);
+
+        const areaIntersect = interW * interH;
+        const area1 = w1 * h1;
+        const area2 = w2 * h2;
+
+        return areaIntersect / (area1 + area2 - areaIntersect);
     }
 
     stop() {
         this.isDetecting = false;
         this.videoElement = null;
+        // Remove overlay
+        const overlay = document.getElementById('local-ai-debug-overlay');
+        if (overlay) overlay.remove();
         console.log('⏹️ Local detection stopped');
+    }
+
+    /**
+     * Draw debug overlay with bounding boxes
+     */
+    drawDebugOverlay(predictions, lighting) {
+        let canvas = document.getElementById('local-ai-debug-overlay');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'local-ai-debug-overlay';
+            canvas.style.position = 'absolute';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '9999';
+            document.body.appendChild(canvas);
+        }
+
+        if (!this.videoElement) return;
+
+        const rect = this.videoElement.getBoundingClientRect();
+
+        // Sync canvas position/size with video
+        if (canvas.width !== rect.width || canvas.height !== rect.height ||
+            canvas.style.top !== `${rect.top}px` || canvas.style.left !== `${rect.left}px`) {
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            canvas.style.top = `${rect.top + window.scrollY}px`;
+            canvas.style.left = `${rect.left + window.scrollX}px`;
+        }
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Scale factors (video native resolution vs displayed size)
+        // CocoSSD returns detection coords relative to the videoElement dimensions it processed
+        // usually it matches if we passed videoElement directly, but if video is scaled via CSS, we rely on canvas matching rect.
+        const scaleX = rect.width / this.videoElement.videoWidth;
+        const scaleY = rect.height / this.videoElement.videoHeight;
+
+        // Draw Predictions
+        predictions.forEach(prediction => {
+            // DEBUG: Draw ALL predictions, even ignored ones, but fade them out
+            const isCounted = this.classesOfInterest.includes(prediction.class) && prediction.score > 0.10;
+            const isIgnoredClass = !this.classesOfInterest.includes(prediction.class);
+
+            if (isIgnoredClass) {
+                ctx.strokeStyle = '#0000FF'; // BLUE: Ignored class
+                ctx.fillStyle = '#0000FF';
+                ctx.lineWidth = 1;
+            } else if (isCounted) {
+                ctx.strokeStyle = '#00FF00'; // GREEN: Counted
+                ctx.fillStyle = '#00FF00';
+                ctx.lineWidth = 3;
+            } else {
+                ctx.strokeStyle = '#FF0000'; // RED: Low score
+                ctx.fillStyle = '#FF0000';
+                ctx.lineWidth = 1;
+            }
+
+            // Show very low confidence for debugging
+            if (prediction.score < 0.05) return;
+
+
+            ctx.lineWidth = 2;
+
+            // bbox: [x, y, width, height]
+            // Note: If TFJS processes the video element directly, bbox is usually in video coordinate space.
+            // We need to scale it to the visual rect.
+            const [x, y, w, h] = prediction.bbox;
+
+            // Sometimes TFJS returns normalized coords or scaled? 
+            // Coco-SSD on video element usually returns coords relative to videoWidth/Height.
+            ctx.strokeRect(x * scaleX, y * scaleY, w * scaleX, h * scaleY);
+
+            // Label
+            ctx.font = '12px Arial';
+            ctx.fillText(
+                `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
+                x * scaleX,
+                (y * scaleY) > 15 ? (y * scaleY) - 5 : (y * scaleY) + 15
+            );
+        });
+
+        // Info Box
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, 150, 60);
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Monospace';
+        ctx.fillText(`Mode: ${lighting.isNight ? '🌙 NIGHT' : '☀️ DAY'}`, 10, 15);
+        ctx.fillText(`Avg Brightness: ${Math.round(lighting.avg)}`, 10, 30);
+        ctx.fillText(`Raw Blobs: ${lighting.blobCount}`, 10, 45);
     }
 }
 
