@@ -194,7 +194,7 @@ class TrafiQApp {
         } else if (envKey) {
             this.analyzer.setApiKey(envKey);
         } else {
-            this.analyzer.setApiKey('ovs_ad7c46804b149f5a6f169e8b59986328');
+            this.analyzer.setApiKey(import.meta.env.VITE_OVERSHOOT_API_KEY);
         }
         this.updateConnectionStatus('ready');
     }
