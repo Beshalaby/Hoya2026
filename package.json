@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node proxy.js & vite",
+    "dev": "node server.js & vite",
     "tunnel": "ngrok http 5173",
     "build": "vite build",
     "preview": "vite preview",

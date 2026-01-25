@@ -10,21 +10,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Enable CORS
 app.use(cors());
 
-// Proxy endpoint for HLS streams
+// Proxy for HLS streams
 app.get('/proxy', async (req, res) => {
     const { url } = req.query;
     if (!url) return res.status(400).send('Missing "url"');
 
     try {
-        const decodedUrl = decodeURIComponent(url);
-        const isManifest = decodedUrl.includes('.m3u8') || decodedUrl.includes('.m3u');
+        const targetUrl = decodeURIComponent(url);
+        const isManifest = targetUrl.includes('.m3u8') || targetUrl.includes('.m3u');
 
         const response = await axios({
             method: 'get',
-            url: decodedUrl,
+            url: targetUrl,
             responseType: isManifest ? 'text' : 'stream',
             validateStatus: () => true
         });
@@ -35,16 +34,18 @@ app.get('/proxy', async (req, res) => {
         res.set('Access-Control-Allow-Origin', '*');
 
         if (isManifest) {
-            const baseUrl = decodedUrl.substring(0, decodedUrl.lastIndexOf('/') + 1);
+            const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
             let manifest = response.data;
+
             if (typeof manifest === 'string') {
-                const lines = manifest.split('\n');
-                const rewritten = lines.map(line => {
-                    const l = line.trim();
-                    if (!l || l.startsWith('#') || l.startsWith('http')) return line;
-                    return baseUrl + l;
-                }).join('\n');
-                res.send(rewritten);
+                const rewriteManifest = (text) => {
+                    return text.split('\n').map(line => {
+                        const l = line.trim();
+                        if (!l || l.startsWith('#') || l.startsWith('http')) return line;
+                        return baseUrl + l;
+                    }).join('\n');
+                };
+                res.send(rewriteManifest(manifest));
             } else {
                 res.send(manifest);
             }
@@ -52,26 +53,20 @@ app.get('/proxy', async (req, res) => {
             response.data.pipe(res);
         }
     } catch (error) {
-        console.error(`Proxy Error:`, error.message);
+        console.error('Proxy error:', error.message);
         res.status(500).send('Proxy Error');
     }
 });
 
-// Serve static files from Vite build
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));
 
-// Handle SPAs / Multi-page entry points (Catch-all middleware)
+// SPA Fallback
 app.use((req, res, next) => {
-    // If it's a proxy request, let it through
-    if (req.path.startsWith('/proxy')) {
-        return next();
-    }
-    // For anything else, serve the index.html
+    if (req.path.startsWith('/proxy')) return next();
     res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Unified Server running on port ${PORT}`);
-    console.log(`📡 Serving static files from: ${distPath}`);
+    console.log(`Server running on port ${PORT}`);
 });

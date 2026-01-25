@@ -7,22 +7,22 @@
 class VoiceAssistantService {
     constructor() {
         // Default agent ID (kept for future ElevenLabs integration)
-        this.agentId = localStorage.getItem('elevenlabs_agent_id') || 
-                       import.meta.env?.VITE_ELEVENLABS_AGENT_ID || 
-                       'agent_2701kfqcg2j2f2ya0q143cn6afky';
+        this.agentId = localStorage.getItem('elevenlabs_agent_id') ||
+            import.meta.env?.VITE_ELEVENLABS_AGENT_ID ||
+            'agent_2701kfqcg2j2f2ya0q143cn6afky';
         this.enabled = localStorage.getItem('voice_assistant_enabled') !== 'false';
-        
+
         this.isConnected = false;
         this.isSpeaking = false;
         this.isListening = false;
         this.recognition = null;
         this.synthesis = window.speechSynthesis;
-        
+
         // Callbacks
-        this.onStatusChange = () => {};
-        this.onMessage = () => {};
-        this.onError = () => {};
-        
+        this.onStatusChange = () => { };
+        this.onMessage = () => { };
+        this.onError = () => { };
+
         // Traffic data context
         this.trafficContext = {
             totalVehicles: 0,
@@ -32,12 +32,11 @@ class VoiceAssistantService {
             avgWaitTime: 0,
             lastUpdate: null
         };
-        
+
         // Check for speech recognition support
         this.speechRecognitionSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-        
-        console.log('🎙️ VoiceAssistantService initialized (Native Speech API)');
-        console.log('🎙️ Speech Recognition supported:', this.speechRecognitionSupported);
+
+        console.log('VoiceAssistantService initialized (Native Speech API)');
     }
 
     /**
@@ -66,7 +65,7 @@ class VoiceAssistantService {
      */
     updateTrafficContext(data) {
         if (!data) return;
-        
+
         this.trafficContext = {
             totalVehicles: data.lanes?.reduce((sum, l) => sum + (l.vehicle_count || 0), 0) || 0,
             lanes: data.lanes || [],
@@ -82,12 +81,12 @@ class VoiceAssistantService {
      */
     calculateOverallCongestion(lanes) {
         if (!lanes || lanes.length === 0) return 'unknown';
-        
+
         const congestionScores = { low: 1, medium: 2, high: 3 };
         const avgScore = lanes.reduce((sum, l) => {
             return sum + (congestionScores[l.congestion] || 1);
         }, 0) / lanes.length;
-        
+
         if (avgScore >= 2.5) return 'high';
         if (avgScore >= 1.5) return 'medium';
         return 'low';
@@ -98,43 +97,39 @@ class VoiceAssistantService {
      */
     async startConversation() {
         if (!this.enabled) {
-            console.log('🎙️ Voice assistant disabled');
             return { success: false, reason: 'disabled' };
         }
 
         if (!this.speechRecognitionSupported) {
-            console.log('🎙️ Speech recognition not supported');
             return { success: false, error: 'Speech recognition not supported in this browser. Try Chrome.' };
         }
 
         if (this.isConnected) {
-            console.log('🎙️ Already connected');
             return { success: true, alreadyConnected: true };
         }
 
         try {
-            console.log('🎙️ Starting voice assistant...');
             this.onStatusChange('connecting');
 
             // Request microphone permission
             await navigator.mediaDevices.getUserMedia({ audio: true });
-            
+
             // Create the voice UI
             this.createVoiceUI();
-            
+
             // Initialize speech recognition
             this.initSpeechRecognition();
 
             this.isConnected = true;
             this.onStatusChange('connected');
-            
+
             // Speak greeting
-            this.speak('TrafiQ voice assistant ready. How can I help you?');
+            this.speak(`TrafiQ Assistant online. How can I assist you?`);
 
             return { success: true };
 
         } catch (error) {
-            console.error('🎙️ Failed to start voice assistant:', error);
+            console.error('Failed to start voice assistant:', error);
             this.onStatusChange('error');
             this.onError(error);
             return { success: false, error: error.message };
@@ -147,13 +142,12 @@ class VoiceAssistantService {
     initSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
-        
+
         this.recognition.continuous = true;
         this.recognition.interimResults = true;
         this.recognition.lang = 'en-US';
 
         this.recognition.onstart = () => {
-            console.log('🎙️ Listening...');
             this.isListening = true;
             this.onStatusChange('listening');
             this.updateUIStatus('Listening...');
@@ -177,22 +171,19 @@ class VoiceAssistantService {
 
             // Process final transcript
             if (finalTranscript) {
-                console.log('🎙️ User said:', finalTranscript);
                 this.processUserInput(finalTranscript);
             }
         };
 
         this.recognition.onerror = (event) => {
-            console.error('🎙️ Speech recognition error:', event.error);
             if (event.error !== 'no-speech') {
                 this.updateUIStatus('Error: ' + event.error);
             }
         };
 
         this.recognition.onend = () => {
-            console.log('🎙️ Recognition ended');
             this.isListening = false;
-            
+
             // Restart if still connected
             if (this.isConnected && !this.isSpeaking) {
                 setTimeout(() => {
@@ -212,45 +203,41 @@ class VoiceAssistantService {
      */
     processUserInput(text) {
         const lowerText = text.toLowerCase();
+        const ctx = this.trafficContext;
         let response = '';
 
         // Traffic status queries
-        if (lowerText.includes('traffic') || lowerText.includes('status') || lowerText.includes('how is')) {
-            const ctx = this.trafficContext;
-            response = `Current traffic status: ${ctx.congestionLevel} congestion with ${ctx.totalVehicles} vehicles detected. Average wait time is ${ctx.avgWaitTime} seconds.`;
+        if (lowerText.includes('traffic') || lowerText.includes('status') || lowerText.includes('condition')) {
+            response = `Current traffic conditions are ${ctx.congestionLevel}. We are detecting ${ctx.totalVehicles} vehicles with an average wait time of ${ctx.avgWaitTime} seconds.`;
         }
         // Vehicle count queries
         else if (lowerText.includes('vehicle') || lowerText.includes('car') || lowerText.includes('count')) {
-            response = `There are currently ${this.trafficContext.totalVehicles} vehicles being tracked.`;
+            response = `There are currently ${ctx.totalVehicles} vehicles tracked at this intersection.`;
         }
-        // Congestion queries
+        // Coongestion queries
         else if (lowerText.includes('congestion') || lowerText.includes('busy')) {
-            response = `The current congestion level is ${this.trafficContext.congestionLevel}.`;
+            response = `Congestion is currently classified as ${ctx.congestionLevel}.`;
         }
         // Alert queries
-        else if (lowerText.includes('alert') || lowerText.includes('warning') || lowerText.includes('incident')) {
-            const alerts = this.trafficContext.alerts;
+        else if (lowerText.includes('alert') || lowerText.includes('incident')) {
+            const alerts = ctx.alerts;
             if (alerts.length > 0) {
-                response = `There are ${alerts.length} active alerts: ${alerts.slice(0, 3).join('. ')}`;
+                response = `There are ${alerts.length} active alerts. ${alerts.slice(0, 3).join('. ')}`;
             } else {
-                response = 'No active alerts at this time.';
+                response = 'There are no active alerts reported at this time.';
             }
         }
-        // Wait time queries
-        else if (lowerText.includes('wait') || lowerText.includes('time')) {
-            response = `The average wait time is ${this.trafficContext.avgWaitTime} seconds.`;
-        }
         // Help
-        else if (lowerText.includes('help') || lowerText.includes('what can')) {
-            response = 'You can ask me about traffic status, vehicle counts, congestion levels, alerts, or wait times.';
+        else if (lowerText.includes('help') || lowerText.includes('can you')) {
+            response = 'I can provide information on traffic status, vehicle counts, congestion levels, and active alerts.';
         }
         // Greeting
         else if (lowerText.includes('hello') || lowerText.includes('hi ') || lowerText.includes('hey')) {
-            response = 'Hello! I\'m your TrafiQ assistant. Ask me about traffic conditions.';
+            response = `Good day. I am the TrafiQ Assistant. How may I help you?`;
         }
-        // Default response
+        // Fallback
         else {
-            response = 'I can help you with traffic information. Try asking about traffic status, vehicle counts, or alerts.';
+            response = 'I apologize, but I did not understand your request. Please ask about traffic conditions, vehicle counts, or system status.';
         }
 
         // Display and speak the response
@@ -306,7 +293,6 @@ class VoiceAssistantService {
      * Create the voice assistant UI
      */
     createVoiceUI() {
-        // Remove existing UI
         this.removeVoiceUI();
 
         const container = document.createElement('div');
@@ -320,17 +306,16 @@ class VoiceAssistantService {
                         <line x1="12" y1="19" x2="12" y2="23"/>
                         <line x1="8" y1="23" x2="16" y2="23"/>
                     </svg>
-                    TrafiQ Voice Assistant
+                    TrafiQ Assistant
                 </div>
                 <button class="voice-ui-close" onclick="window.trafiQ?.voiceAssistantService?.endConversation()">×</button>
             </div>
             <div class="voice-ui-status" id="voice-ui-status">Initializing...</div>
             <div class="voice-ui-transcript" id="voice-ui-transcript"></div>
             <div class="voice-ui-response" id="voice-ui-response"></div>
-            <div class="voice-ui-hint">Try: "What's the traffic status?" or "How many vehicles?"</div>
+            <div class="voice-ui-hint">Try: "What is the traffic status?" or "How many vehicles?"</div>
         `;
 
-        // Add styles
         const style = document.createElement('style');
         style.id = 'voice-ui-styles';
         style.textContent = `
@@ -407,7 +392,7 @@ class VoiceAssistantService {
                 border-bottom: 1px solid rgba(255,255,255,0.1);
             }
             .voice-ui-transcript:empty::before {
-                content: 'Say something...';
+                content: 'Listening...';
                 opacity: 0.5;
             }
             .voice-ui-transcript.interim {
@@ -424,7 +409,7 @@ class VoiceAssistantService {
                 overflow-y: auto;
             }
             .voice-ui-response:empty::before {
-                content: 'Response will appear here...';
+                content: 'Response pending...';
                 opacity: 0.3;
             }
             .voice-ui-hint {
@@ -435,11 +420,10 @@ class VoiceAssistantService {
                 text-align: center;
             }
         `;
-        
+
         document.head.appendChild(style);
         document.body.appendChild(container);
 
-        // Store reference to service on window for the close button
         window.trafiQ = window.trafiQ || {};
         window.trafiQ.voiceAssistantService = this;
     }
@@ -489,24 +473,20 @@ class VoiceAssistantService {
      * End the voice conversation
      */
     async endConversation() {
-        // Stop speech recognition
         if (this.recognition) {
             this.recognition.stop();
             this.recognition = null;
         }
-        
-        // Stop any ongoing speech
+
         if (this.synthesis) {
             this.synthesis.cancel();
         }
-        
+
         this.removeVoiceUI();
         this.isConnected = false;
         this.isSpeaking = false;
         this.isListening = false;
         this.onStatusChange('disconnected');
-        
-        console.log('🎙️ Voice assistant ended');
     }
 
     /**
@@ -535,22 +515,7 @@ class VoiceAssistantService {
             isListening: this.isListening
         };
     }
-
-    /**
-     * Get current status
-     */
-    getStatus() {
-        if (!this.enabled) return 'disabled';
-        if (!this.isConfigured()) return 'not_supported';
-        if (this.isConnected) {
-            if (this.isSpeaking) return 'speaking';
-            if (this.isListening) return 'listening';
-            return 'connected';
-        }
-        return 'ready';
-    }
 }
 
-// Export singleton instance
 export const voiceAssistantService = new VoiceAssistantService();
 export default VoiceAssistantService;

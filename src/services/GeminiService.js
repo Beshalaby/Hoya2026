@@ -7,7 +7,7 @@ import { dataStore } from './DataStore.js';
 export class GeminiService {
     constructor() {
         this.API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-        this.MODEL = 'google/gemini-2.0-flash-001'; // Defaulting to 2.0 Flash via OpenRouter
+        this.MODEL = 'google/gemini-2.0-flash-001';
     }
 
     /**
@@ -28,17 +28,15 @@ export class GeminiService {
             throw new Error('OpenRouter API Key is missing. Please add VITE_OPENROUTER_API_KEY to .env or settings.');
         }
 
-        // 1. Construct the Context
         const prompt = this.constructPrompt(analyticsSummary);
 
         try {
-            // 2. Call OpenRouter API (OpenAI Compatible)
             const response = await fetch(this.API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apiKey}`,
-                    'HTTP-Referer': window.location.origin, // Required by OpenRouter
+                    'HTTP-Referer': window.location.origin,
                     'X-Title': 'TraffIQ'
                 },
                 body: JSON.stringify({
@@ -46,14 +44,14 @@ export class GeminiService {
                     messages: [
                         {
                             role: 'system',
-                            content: 'You are a Senior Traffic Engineer. Output strictly in Markdown.'
+                            content: 'You are a Senior Traffic Engineer acting as a consultant. Your output must be strictly professional, technical, and objective. Do not speculate or hallucinate data not provided. Output strictly in Markdown format.'
                         },
                         {
                             role: 'user',
                             content: prompt
                         }
                     ],
-                    temperature: 0.7
+                    temperature: 0.5 // Lower temperature for more deterministic/professional output
                 })
             });
 
@@ -63,8 +61,6 @@ export class GeminiService {
             }
 
             const data = await response.json();
-
-            // 3. Extract Text (OpenAI format)
             const text = data.choices?.[0]?.message?.content;
             if (!text) throw new Error('Empty response from AI');
 
@@ -80,27 +76,47 @@ export class GeminiService {
      * Construct the prompt for the AI
      */
     constructPrompt(data) {
-        // Safe defaults
         const vehicles = data.totalVehiclesToday || 0;
         const congestion = data.congestionScore || 'Low';
         const queue = data.avgQueueLength || 0;
         const incidents = data.incidentsToday || 0;
         const efficiency = data.flowEfficiency || 100;
 
-        return `
-Generate a "Traffic Optimization Report" based on:
-- Volume: ${vehicles}
-- Congestion: ${congestion}
-- Avg Queue: ${queue}m
-- Efficiency: ${efficiency}/100
-- Incidents: ${incidents}
+        // Context Injection
+        const location = "Georgetown, Washington D.C.";
+        const date = new Date().toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
 
-Provide:
-1. Analysis of current performance.
-2. 3 specific engineering recommendations.
-3. Estimated impact.
-Keep it professional and concise.
-        `.trim();
+        return `
+GENERATE TRAFFIC OPTIMIZATION REPORT
+
+CONTEXT:
+- Location: ${location}
+- Report Generated: ${date}
+
+DATA METRICS (Last 24 Hours):
+- Total Volume: ${vehicles} vehicles
+- Congestion Level: ${congestion}
+- Average Queue Length: ${queue} meters
+- Flow Efficiency: ${efficiency}/100
+- Recorded Incidents: ${incidents}
+
+INSTRUCTIONS:
+Provide a formal engineering report including:
+1. Executive Summary of current performance in ${location}.
+2. Technical Analysis of the metrics provided.
+3. Three (3) specific, actionable engineering recommendations.
+4. Estimated impact on flow efficiency and CO2 emissions.
+
+TONE:
+Professional, Concise, and Authoritative. Avoid conversational language.
+`.trim();
     }
 }
 
