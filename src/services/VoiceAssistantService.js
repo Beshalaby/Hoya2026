@@ -6,10 +6,10 @@
 
 class VoiceAssistantService {
     constructor() {
-        // Default agent ID (kept for future ElevenLabs integration)
+        // Agent ID from environment or localStorage (no default fallback)
         this.agentId = localStorage.getItem('elevenlabs_agent_id') ||
             import.meta.env?.VITE_ELEVENLABS_AGENT_ID ||
-            'agent_2701kfqcg2j2f2ya0q143cn6afky';
+            '';
         this.enabled = localStorage.getItem('voice_assistant_enabled') !== 'false';
 
         this.isConnected = false;
