@@ -14,6 +14,8 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@11labs/client": "^0.2.0",
+    "@elevenlabs/client": "^0.13.0",
     "@overshoot/sdk": "^0.1.0-alpha.3",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",

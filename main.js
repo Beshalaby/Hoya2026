@@ -15,6 +15,7 @@ import { AudioAlerts } from './src/utils/AudioAlerts.js';
 import { localCounter } from './src/ai/LocalCounter.js';
 import { dataStore } from './src/services/DataStore.js';
 import { authService } from './src/services/AuthService.js';
+import { voiceAssistantService } from './src/services/VoiceAssistantService.js';
 
 /**
  * TrafiQ - Traffic Optimization Dashboard
@@ -120,8 +121,11 @@ class TrafiQApp {
         // Initialize Analyzer logic
         this.initializeAnalyzer();
 
+        // Initialize Voice Assistant
+        this.initializeVoiceAssistant();
+
         console.log('✅ TrafiQ Dashboard ready');
-        console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, ?=Help');
+        console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, V=Voice, ?=Help');
     }
 
     /**
@@ -279,6 +283,253 @@ class TrafiQApp {
             this.analyzer.setApiKey(fallbackKey);
             this.updateConnectionStatus('ready');
         }
+    }
+
+    /**
+     * Initialize Voice Assistant
+     */
+    initializeVoiceAssistant() {
+        const voiceBtn = document.getElementById('voiceAssistantBtn');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const voiceContainer = document.getElementById('voiceAssistant');
+
+        if (!voiceBtn) {
+            console.log('🎙️ Voice assistant button not found');
+            return;
+        }
+
+        // Check if configured
+        const config = voiceAssistantService.getConfig();
+        if (!config.agentIdSet) {
+            voiceBtn.classList.add('voice-assistant__btn--disabled');
+            voiceBtn.title = 'Voice Assistant - Configure in Settings';
+            this.updateVoiceStatus('Configure in Settings');
+        } else {
+            voiceBtn.classList.remove('voice-assistant__btn--disabled');
+            voiceBtn.title = 'Voice Assistant (V)';
+            this.updateVoiceStatus('Ready');
+        }
+
+        // Setup callbacks
+        voiceAssistantService.onStatusChange = (status) => {
+            this.updateVoiceAssistantUI(status);
+        };
+
+        voiceAssistantService.onMessage = (message) => {
+            console.log('🎙️ Assistant:', message);
+        };
+
+        voiceAssistantService.onError = (error) => {
+            console.error('🎙️ Voice error:', error);
+            this.updateVoiceStatus('Error - Try again');
+        };
+
+        // Button click handler
+        voiceBtn.addEventListener('click', async () => {
+            // Check if already connected (toggle off)
+            if (voiceAssistantService.isConnected) {
+                await voiceAssistantService.endConversation();
+                this.updateVoiceStatus('Ready');
+                return;
+            }
+
+            // Check if configured
+            if (!voiceAssistantService.isConfigured()) {
+                console.log('🎙️ Voice assistant not configured');
+                this.showVoiceConfigHint();
+                return;
+            }
+
+            // Show connecting state immediately
+            this.updateVoiceStatus('Connecting...');
+            voiceBtn.classList.add('voice-assistant__btn--active');
+
+            // Update traffic context before starting
+            voiceAssistantService.updateTrafficContext(this.getTrafficContext());
+
+            // Toggle the conversation
+            try {
+                const result = await voiceAssistantService.toggle();
+                
+                if (result.connected) {
+                    this.updateVoiceStatus('Connected - Speak now');
+                } else if (result.reason === 'not_configured') {
+                    this.updateVoiceStatus('Configure in Settings');
+                    voiceBtn.classList.remove('voice-assistant__btn--active');
+                    this.showVoiceConfigHint();
+                } else if (result.error) {
+                    // Show specific error message
+                    this.updateVoiceStatus('Mic Error');
+                    voiceBtn.classList.remove('voice-assistant__btn--active');
+                    this.showMicrophoneError(result.error);
+                } else {
+                    this.updateVoiceStatus('Error - Try again');
+                    voiceBtn.classList.remove('voice-assistant__btn--active');
+                }
+            } catch (error) {
+                console.error('🎙️ Voice toggle error:', error);
+                this.updateVoiceStatus('Error - Try again');
+                voiceBtn.classList.remove('voice-assistant__btn--active');
+            }
+        });
+
+        console.log('🎙️ Voice assistant initialized', config.isConfigured ? '(configured)' : '(not configured)');
+    }
+
+    /**
+     * Get current traffic context for voice assistant
+     */
+    getTrafficContext() {
+        const summary = dataStore.getAnalyticsSummary();
+        return {
+            lanes: this.heatmap?.lanes || [],
+            alerts: this.alertsPanel?.alerts?.map(a => a.text) || [],
+            avg_wait_seconds: summary?.avgWaitTime || 0,
+            totalVehicles: summary?.totalVehiclesToday || 0
+        };
+    }
+
+    /**
+     * Update voice assistant UI based on status
+     */
+    updateVoiceAssistantUI(status) {
+        const voiceBtn = document.getElementById('voiceAssistantBtn');
+        const voiceContainer = document.getElementById('voiceAssistant');
+        const micIcon = voiceBtn?.querySelector('.voice-assistant__icon--mic');
+        const waveIcon = voiceBtn?.querySelector('.voice-assistant__icon--wave');
+
+        if (!voiceBtn) return;
+
+        // Remove all state classes
+        voiceBtn.classList.remove(
+            'voice-assistant__btn--active',
+            'voice-assistant__btn--speaking',
+            'voice-assistant__btn--error',
+            'voice-assistant__btn--disabled'
+        );
+        voiceContainer?.classList.remove('voice-assistant--active');
+
+        // Show appropriate icon
+        if (micIcon) micIcon.style.display = 'block';
+        if (waveIcon) waveIcon.style.display = 'none';
+
+        switch (status) {
+            case 'connecting':
+                this.updateVoiceStatus('Connecting...');
+                break;
+            case 'connected':
+            case 'listening':
+                voiceBtn.classList.add('voice-assistant__btn--active');
+                voiceContainer?.classList.add('voice-assistant--active');
+                this.updateVoiceStatus('Listening...');
+                break;
+            case 'speaking':
+                voiceBtn.classList.add('voice-assistant__btn--speaking');
+                voiceContainer?.classList.add('voice-assistant--active');
+                if (micIcon) micIcon.style.display = 'none';
+                if (waveIcon) waveIcon.style.display = 'block';
+                this.updateVoiceStatus('Speaking...');
+                break;
+            case 'error':
+                voiceBtn.classList.add('voice-assistant__btn--error');
+                this.updateVoiceStatus('Error');
+                break;
+            case 'disconnected':
+            default:
+                this.updateVoiceStatus('Ready');
+                break;
+        }
+    }
+
+    /**
+     * Update voice status text
+     */
+    updateVoiceStatus(text) {
+        const statusText = document.querySelector('.voice-assistant__status-text');
+        if (statusText) {
+            statusText.textContent = text;
+        }
+    }
+
+    /**
+     * Show hint to configure voice assistant
+     */
+    showVoiceConfigHint() {
+        // Create a toast notification
+        const toast = document.createElement('div');
+        toast.className = 'voice-config-toast';
+        toast.innerHTML = `
+            <span>Voice Assistant requires configuration</span>
+            <a href="/settings.html" class="btn btn--sm btn--primary">Open Settings</a>
+        `;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 1001;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            animation: slideInUp 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+
+    /**
+     * Show microphone error message
+     */
+    showMicrophoneError(errorMsg) {
+        // Remove any existing toast
+        const existing = document.querySelector('.mic-error-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'mic-error-toast';
+        toast.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>${errorMsg}</span>
+        `;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            background: #1f1f2e;
+            border: 1px solid #f87171;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1001;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            color: #f1f5f9;
+            font-size: 14px;
+            max-width: 350px;
+        `;
+        document.body.appendChild(toast);
+
+        // Auto-remove after 6 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 6000);
     }
 
     /**
@@ -458,6 +709,10 @@ class TrafiQApp {
                         const enabled = this.audioAlerts.toggle();
                         console.log(`🔊 Audio alerts ${enabled ? 'enabled' : 'disabled'}`);
                     }
+                    break;
+                case 'v':
+                    // V = Toggle voice assistant
+                    document.getElementById('voiceAssistantBtn')?.click();
                     break;
                 case '?':
                     // ? = Show help

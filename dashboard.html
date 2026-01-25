@@ -254,7 +254,181 @@
             <span>C</span> Camera
             <span>E</span> Export
             <span>M</span> Mute
+            <span>V</span> Voice
         </div>
+
+        <!-- Voice Assistant Floating Button -->
+        <div class="voice-assistant" id="voiceAssistant">
+            <button class="voice-assistant__btn" id="voiceAssistantBtn" title="Voice Assistant (V)">
+                <svg class="voice-assistant__icon voice-assistant__icon--mic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                <svg class="voice-assistant__icon voice-assistant__icon--wave" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <path d="M12 1v22"/>
+                    <path d="M8 4v16"/>
+                    <path d="M16 4v16"/>
+                    <path d="M4 8v8"/>
+                    <path d="M20 8v8"/>
+                </svg>
+                <div class="voice-assistant__pulse"></div>
+            </button>
+            <div class="voice-assistant__status" id="voiceStatus">
+                <span class="voice-assistant__status-text">Ready</span>
+            </div>
+        </div>
+
+        <!-- Voice Assistant Styles -->
+        <style>
+            .voice-assistant {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                z-index: 1000;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .voice-assistant__btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: visible;
+            }
+
+            .voice-assistant__btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+            }
+
+            .voice-assistant__btn:active {
+                transform: scale(0.95);
+            }
+
+            .voice-assistant__btn.voice-assistant__btn--active {
+                background: linear-gradient(135deg, #10b981, #059669);
+                box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+            }
+
+            .voice-assistant__btn.voice-assistant__btn--speaking {
+                background: linear-gradient(135deg, #f59e0b, #d97706);
+                box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+            }
+
+            .voice-assistant__btn.voice-assistant__btn--error {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+            }
+
+            .voice-assistant__pulse {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background: inherit;
+                opacity: 0;
+                animation: none;
+                pointer-events: none;
+            }
+
+            .voice-assistant__btn--active .voice-assistant__pulse,
+            .voice-assistant__btn--speaking .voice-assistant__pulse {
+                animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            }
+
+            @keyframes pulse-ring {
+                0% {
+                    transform: scale(1);
+                    opacity: 0.5;
+                }
+                100% {
+                    transform: scale(1.5);
+                    opacity: 0;
+                }
+            }
+
+            .voice-assistant__icon {
+                position: relative;
+                z-index: 1;
+            }
+
+            .voice-assistant__status {
+                background: var(--color-bg-card);
+                border: 1px solid var(--color-border);
+                border-radius: 20px;
+                padding: 6px 14px;
+                font-size: 0.75rem;
+                font-weight: 500;
+                color: var(--color-text-secondary);
+                opacity: 0;
+                transform: translateY(10px);
+                transition: all 0.3s ease;
+                pointer-events: none;
+            }
+
+            .voice-assistant:hover .voice-assistant__status,
+            .voice-assistant.voice-assistant--active .voice-assistant__status {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .voice-assistant__status-text {
+                white-space: nowrap;
+            }
+
+            /* Listening animation for the icon */
+            .voice-assistant__btn--active .voice-assistant__icon--mic {
+                animation: listening-bounce 0.5s ease-in-out infinite alternate;
+            }
+
+            @keyframes listening-bounce {
+                from { transform: scale(1); }
+                to { transform: scale(1.1); }
+            }
+
+            /* Speaking animation */
+            .voice-assistant__btn--speaking .voice-assistant__icon--wave path {
+                animation: wave-bar 0.5s ease-in-out infinite alternate;
+            }
+
+            .voice-assistant__btn--speaking .voice-assistant__icon--wave path:nth-child(1) { animation-delay: 0s; }
+            .voice-assistant__btn--speaking .voice-assistant__icon--wave path:nth-child(2) { animation-delay: 0.1s; }
+            .voice-assistant__btn--speaking .voice-assistant__icon--wave path:nth-child(3) { animation-delay: 0.2s; }
+            .voice-assistant__btn--speaking .voice-assistant__icon--wave path:nth-child(4) { animation-delay: 0.3s; }
+            .voice-assistant__btn--speaking .voice-assistant__icon--wave path:nth-child(5) { animation-delay: 0.4s; }
+
+            @keyframes wave-bar {
+                from { transform: scaleY(0.5); }
+                to { transform: scaleY(1); }
+            }
+
+            /* Not configured state */
+            .voice-assistant__btn--disabled {
+                background: var(--color-bg-elevated);
+                border: 2px dashed var(--color-border);
+                box-shadow: none;
+                color: var(--color-text-muted);
+            }
+
+            .voice-assistant__btn--disabled:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        </style>
 
         <!-- Add Camera Modal -->
         <div class="modal" id="addCameraModal">

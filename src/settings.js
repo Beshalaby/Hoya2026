@@ -3,6 +3,7 @@
  * Handles settings UI and persistence
  */
 import { dataStore } from './services/DataStore.js';
+import { voiceAssistantService } from './services/VoiceAssistantService.js';
 import { UIUtils } from './utils/UIUtils.js';
 import './style.css';
 
@@ -13,8 +14,10 @@ class SettingsPage {
 
     init() {
         this.loadSettings();
+        this.loadVoiceAssistantSettings();
         UIUtils.setupCustomDropdowns();
         this.setupEventListeners();
+        this.setupVoiceAssistantListeners();
         console.log('⚙️ Settings page initialized');
     }
 
@@ -156,7 +159,122 @@ class SettingsPage {
         }
     }
 
+    /**
+     * Load voice assistant settings
+     */
+    loadVoiceAssistantSettings() {
+        const config = voiceAssistantService.getConfig();
+        
+        // Update status badge
+        const statusBadge = document.getElementById('voiceAssistantStatus');
+        if (statusBadge) {
+            if (config.isConfigured) {
+                statusBadge.textContent = 'Configured';
+                statusBadge.style.background = 'var(--color-success)';
+            } else if (config.agentIdSet) {
+                statusBadge.textContent = 'Ready';
+                statusBadge.style.background = 'var(--color-warning)';
+            } else {
+                statusBadge.textContent = 'Not Configured';
+                statusBadge.style.background = 'var(--color-text-muted)';
+            }
+        }
 
+        // Load values into form
+        const enabledToggle = document.getElementById('voiceAssistantEnabled');
+        const agentIdInput = document.getElementById('voiceAgentId');
+
+        if (enabledToggle) enabledToggle.checked = config.enabled;
+        if (agentIdInput) {
+            // Show masked version if set
+            const savedAgentId = localStorage.getItem('elevenlabs_agent_id') || '';
+            agentIdInput.value = savedAgentId;
+        }
+    }
+
+    /**
+     * Setup voice assistant event listeners
+     */
+    setupVoiceAssistantListeners() {
+        // Save button
+        document.getElementById('saveVoiceSettings')?.addEventListener('click', () => {
+            this.saveVoiceAssistantSettings();
+        });
+
+        // Test button
+        document.getElementById('testVoiceAssistant')?.addEventListener('click', () => {
+            this.testVoiceAssistant();
+        });
+
+        // Enable toggle
+        document.getElementById('voiceAssistantEnabled')?.addEventListener('change', (e) => {
+            voiceAssistantService.configure({ enabled: e.target.checked });
+            this.showToast(`Voice Assistant ${e.target.checked ? 'enabled' : 'disabled'}`);
+        });
+
+        // Enter key on input
+        document.getElementById('voiceAgentId')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.saveVoiceAssistantSettings();
+            }
+        });
+    }
+
+    /**
+     * Save voice assistant settings
+     */
+    saveVoiceAssistantSettings() {
+        const agentIdInput = document.getElementById('voiceAgentId');
+        const enabledToggle = document.getElementById('voiceAssistantEnabled');
+
+        const agentId = agentIdInput?.value?.trim();
+        const enabled = enabledToggle?.checked;
+
+        voiceAssistantService.configure({
+            agentId: agentId,
+            enabled: enabled
+        });
+        
+        this.loadVoiceAssistantSettings(); // Refresh UI
+        this.showToast('Voice Assistant settings saved');
+    }
+
+    /**
+     * Test the voice assistant
+     */
+    async testVoiceAssistant() {
+        const config = voiceAssistantService.getConfig();
+        
+        if (!config.isConfigured) {
+            if (!config.agentIdSet) {
+                this.showToast('Please enter your Agent ID first');
+            } else {
+                this.showToast('Voice Assistant not fully configured');
+            }
+            return;
+        }
+
+        this.showToast('Starting voice assistant test...');
+        
+        try {
+            const result = await voiceAssistantService.startConversation();
+            
+            if (result.success) {
+                this.showToast('Voice Assistant connected! Say something...');
+                
+                // Auto-disconnect after 10 seconds for testing
+                setTimeout(async () => {
+                    await voiceAssistantService.endConversation();
+                    this.showToast('Test completed');
+                }, 10000);
+            } else {
+                this.showToast(`Test failed: ${result.error || result.reason}`);
+            }
+        } catch (error) {
+            this.showToast(`Error: ${error.message}`);
+            console.error('Voice assistant test error:', error);
+        }
+    }
 
     exportData() {
         const data = dataStore.exportData();
