@@ -118,13 +118,13 @@ export class LocalCounter {
             pixelSamples++;
         }
         const avgBrightness = totalBrightness / pixelSamples;
-        const isNight = avgBrightness < 130; // Threshold (0-255) - Increased to force Night Mode
+        const isNight = avgBrightness < 60; // Lowered to 60 to prevent false Night Mode on cloudy days
 
         // 2. BFS Blob Detection with Motion Filter
         // Only run detailed analysis if it IS night (save CPU)
         if (isNight) {
-            const threshold = 180; // Lowered to 180 to catch dimmer headlights
-            const motionThreshold = 10; // Lowered to 10 to catch subtle motion
+            const threshold = 220; // High threshold for center of flare
+            const motionThreshold = 15; // Lowered to 15 to catch subtle motion (was 30)
 
             // Ensure prevFrameData exists
             if (!this.prevFrameData || this.prevFrameData.length !== data.length) {
@@ -151,8 +151,8 @@ export class LocalCounter {
                         const blobStats = this.floodFill(x, y, data, visited, width, height, threshold, this.prevFrameData, motionThreshold);
 
                         // Filter noise
-                        // VALID BLOB: Size > 4 pixels AND contains ANY moving pixels (was > 2)
-                        if (blobStats.size > 4 && blobStats.movingPixels > 0) {
+                        // VALID BLOB: Size > 2 pixels (catch distant lights) AND contains ANY moving pixels
+                        if (blobStats.size > 2 && blobStats.movingPixels > 0) {
                             blobCount++;
                         }
                     }
@@ -238,8 +238,8 @@ export class LocalCounter {
         // Standard AI counting
         let aiTotal = 0;
         predictions.forEach(p => {
-            // High Angle Optimization: Lower scoring threshold
-            if (this.classesOfInterest.includes(p.class) && p.score > 0.35) {
+            // High Angle Optimization: Lower scoring threshold (0.25) for small distant cars
+            if (this.classesOfInterest.includes(p.class) && p.score > 0.25) {
                 counts[p.class] = (counts[p.class] || 0) + 1;
                 aiTotal++;
             }

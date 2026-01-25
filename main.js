@@ -727,12 +727,10 @@ ESC   - Stop demo / close modals
         this.lastAnalysisTime = now;
 
         // Dwell Time Estimation (Highway Tuned)
-        // Highway speed (~100km/h or 28m/s). Video view might cover ~100m. 
-        // 100m / 28m/s = ~3.5 seconds to cross screen.
-        // Default (Low Queue) = 4s.
-        // Dwell Time Estimation (Highway Tuned - High Speed)
-        // Setting to 1.5s ensures 1 fast pass = 1 full count.
-        let dwellTimeSeconds = 1.5;
+        // Dwell Time Estimation (Highway Tuned - Fast)
+        // Cars moving at highway speeds stay in frame for < 1s.
+        // Adjusted to 0.8s to ensure fast cars count as 1.0 vehicle.
+        let dwellTimeSeconds = 0.8;
 
         const queue = this.lastQueueLength || 0;
         if (queue > 20) dwellTimeSeconds = 45; // Gridlock

@@ -31,10 +31,10 @@ export class StatsPanel {
      */
     updateVehicleCounts(counts) {
         if (!counts) return;
-        this.animateValue('carCount', counts.car || 0);
-        this.animateValue('busCount', counts.bus || 0);
-        this.animateValue('truckCount', counts.truck || 0);
-        this.animateValue('motorcycleCount', counts.motorcycle || 0);
+        this.animateValue('carCount', Math.floor(counts.car || 0));
+        this.animateValue('busCount', Math.floor(counts.bus || 0));
+        this.animateValue('truckCount', Math.floor(counts.truck || 0));
+        this.animateValue('motorcycleCount', Math.floor(counts.motorcycle || 0));
     }
 
     /**

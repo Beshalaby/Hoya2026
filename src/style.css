@@ -69,33 +69,65 @@ html {
 
 body {
   font-family: var(--font-family);
-  background: var(--color-bg);
+  background: #000000;
   color: var(--color-text);
   line-height: 1.5;
   min-height: 100vh;
+  position: relative;
 }
+
+/* Global Background Texture Removed by User Request */
 
 #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 /* ========================================
    Header - Clean & Minimal
    ======================================== */
+/* Header solid background to prevent visual overlap */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md) var(--space-xl);
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+  background: #000000;
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 100;
 }
+
+/* ... existing header inner classes ... */
+
+/* Responsive Dashboard Layout */
+@media (max-width: 1024px) {
+  .main-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: auto;
+  }
+
+  .layout-resizer {
+    display: none;
+  }
+
+  .main-layout__left {
+    padding-right: 0;
+    margin-bottom: var(--space-md);
+  }
+
+  .main-layout__right {
+    padding-left: 0;
+  }
+}
+
+/* End Responsive Dashboard Layout */
 
 .header__brand {
   display: flex;
@@ -193,18 +225,20 @@ body {
 }
 
 .btn--primary {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-  color: white;
+  background: white;
+  color: black;
   border: none;
-  box-shadow: 0 4px 12px var(--color-primary-glow);
+  font-weight: 600;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
 }
 
 .btn--primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px var(--color-primary-glow);
-  filter: brightness(1.1);
+  background: #f0f0f0;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+  filter: none;
 }
 
 .btn--primary:active {
@@ -389,11 +423,14 @@ body {
    Cards
    ======================================== */
 .card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
-  border-radius: var(--radius-lg);
-  position: relative; /* Ensure z-index context */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  position: relative;
+  /* Ensure z-index context */
 }
 
 /* Specific cards that need clipping */
@@ -406,6 +443,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
   padding: var(--space-md);
   border-bottom: 1px solid var(--color-border);
 }
@@ -1502,6 +1541,7 @@ body {
   color: var(--color-text-secondary);
   text-transform: uppercase;
 }
+
 /* ========================================
    Custom Select Dropdown
    ======================================== */
@@ -1581,10 +1621,11 @@ body {
   visibility: hidden;
   pointer-events: none;
   transform: translateY(-8px);
-  z-index: 1000; /* Higher than card headers and other elements */
+  z-index: 1000;
+  /* Higher than card headers and other elements */
   max-height: 250px;
   overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .custom-select.open .custom-select__options {

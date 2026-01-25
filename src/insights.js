@@ -2,10 +2,12 @@
  * AI Insights Page JavaScript
  * Generates infrastructure recommendations based on actual analytics data only
  */
+import { geminiService } from './services/GeminiService.js';
 import { dataStore } from './services/DataStore.js';
 import { OFFICIAL_CAMERAS } from './config/cameras.js';
 import { UIUtils } from './utils/UIUtils.js';
-import './style.css';
+
+
 
 class InsightsPage {
     constructor() {
@@ -27,7 +29,7 @@ class InsightsPage {
         if (!filter) return;
 
         const storedCameras = Object.keys(dataStore.data.analytics.intersectionStats || {});
-        
+
         filter.innerHTML = '<option value="">All Roads</option>';
 
         storedCameras.forEach(camId => {
@@ -138,10 +140,10 @@ class InsightsPage {
     updateStats() {
         const total = this.suggestions.length;
         const highPriority = this.suggestions.filter(s => s.priority === 'high').length;
-        const signals = this.suggestions.filter(s => 
+        const signals = this.suggestions.filter(s =>
             s.type === 'traffic-signal' || s.type === 'timing-optimization'
         ).length;
-        const infra = this.suggestions.filter(s => 
+        const infra = this.suggestions.filter(s =>
             s.type === 'road-improvement' || s.type === 'new-infrastructure'
         ).length;
 
@@ -186,6 +188,9 @@ class InsightsPage {
                         <line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
                     <span>Run traffic analysis to generate recommendations</span>
+                    <button id="seedDataBtn" class="btn btn--outline btn--sm" style="margin-top: 1rem;">
+                        Populate Demo Data
+                    </button>
                 </div>
             `;
             return;
@@ -249,10 +254,10 @@ class InsightsPage {
             return;
         }
 
-        const signalSuggestions = this.suggestions.filter(s => 
+        const signalSuggestions = this.suggestions.filter(s =>
             s.type === 'traffic-signal' || s.type === 'timing-optimization'
         );
-        const infraSuggestions = this.suggestions.filter(s => 
+        const infraSuggestions = this.suggestions.filter(s =>
             s.type === 'road-improvement' || s.type === 'new-infrastructure'
         );
 
@@ -305,7 +310,22 @@ class InsightsPage {
             this.loadInsights();
         });
 
+        document.getElementById('generateAiReportBtn')?.addEventListener('click', () => this.generateAiReport());
         document.getElementById('exportBtn')?.addEventListener('click', () => this.exportReport());
+
+        // Seed Data Button (Header)
+        document.getElementById('seedDataBtnHeader')?.addEventListener('click', () => {
+            if (confirm('This will clear current data and generate demo scenarios. Continue?')) {
+                try {
+                    dataStore.generateComplexDemoData();
+                    alert('Demo data generated! Reloading...');
+                    window.location.reload();
+                } catch (err) {
+                    console.error(err);
+                    alert('Error generating data: ' + err.message);
+                }
+            }
+        });
 
         // Auto-refresh
         setInterval(() => this.loadInsights(), 30000);
@@ -317,6 +337,78 @@ class InsightsPage {
                 this.populateCameraFilter();
                 this.loadInsights();
             }
+        });
+    }
+
+    async generateAiReport() {
+        const btn = document.getElementById('generateAiReportBtn');
+        const originalText = btn.innerHTML;
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 16v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4m16 0h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Generating...`;
+
+            // Get data
+            const summary = dataStore.getAnalyticsSummary(this.selectedCameraId);
+
+            // Call AI
+            const report = await geminiService.generateTrafficReport(summary);
+
+            // Show result
+            this.showReportModal(report);
+
+        } catch (error) {
+            console.error(error);
+            this.showToast(error.message || 'Failed to generate report');
+            if (error.message.includes('API Key')) {
+                setTimeout(() => window.location.href = '/settings.html', 2000);
+            }
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    showReportModal(reportText) {
+        // Simple Markdown parsing (headers and lists)
+        const htmlContent = reportText
+            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+            .replace(/^\- (.*$)/gim, '<li>$1</li>')
+            .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
+            .replace(/\n/gim, '<br>');
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h2>Traffic Engineering Report</h2>
+                    <button class="btn-close">&times;</button>
+                </div>
+                <div class="modal-body" style="line-height: 1.6;">
+                    ${htmlContent}
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn--primary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+                    <button class="btn btn--outline" onclick="navigator.clipboard.writeText('${reportText.replace(/'/g, "\\'").replace(/\n/g, "\\n")}'); alert('Copied!')">Copy Text</button>
+                </div>
+            </div>
+            <style>
+                .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+                .modal-content { background: var(--color-bg-card); padding: 2rem; border-radius: 12px; border: 1px solid var(--color-border); width: 100%; margin: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+                .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: 1rem; }
+                .btn-close { background: none; border: none; font-size: 1.5rem; color: var(--color-text-muted); cursor: pointer; }
+                .spin { animation: spin 1s linear infinite; margin-right: 6px; }
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+            </style>
+        `;
+
+        document.body.appendChild(modal);
+        modal.querySelector('.btn-close').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
         });
     }
 

@@ -9,16 +9,8 @@ export class DataStore {
     }
 
     get storageKey() {
-        try {
-            const session = localStorage.getItem('traffiq_session');
-            if (session) {
-                const user = JSON.parse(session).email;
-                if (user) return `${this.baseKey}_${user}`;
-            }
-        } catch (e) {
-            // ignore
-        }
-        return this.baseKey;
+        // Hardcoded key to ensure Dashboard and Analytics ALWAYS share the same data
+        return 'traffiq_data_master';
     }
 
     /**
@@ -426,6 +418,7 @@ export class DataStore {
         }
 
         // Calculate efficiency
+        const totalVehicles = todayData.vehicles;
         const efficiency = totalVehicles > 0 ? Math.min(99, Math.max(70, 94 - incidentCount * 2)) : 0;
 
         // Get average queue length - camera-specific if provided

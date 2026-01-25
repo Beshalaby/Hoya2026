@@ -32,20 +32,20 @@
                 <a href="/settings.html" class="nav-btn">Settings</a>
             </nav>
             <div class="header__actions">
-            <div class="custom-select-wrapper">
-                <div class="custom-select" id="customInsightsFilter">
-                    <div class="custom-select__trigger">
-                        <span>All Roads</span>
-                        <div class="custom-select__arrow"></div>
+                <div class="custom-select-wrapper">
+                    <div class="custom-select" id="customInsightsFilter">
+                        <div class="custom-select__trigger">
+                            <span>All Roads</span>
+                            <div class="custom-select__arrow"></div>
+                        </div>
+                        <div class="custom-select__options">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
-                    <div class="custom-select__options">
-                        <!-- Populated by JS -->
-                    </div>
+                    <select id="insightsCameraFilter" style="display: none;">
+                        <option value="">All Roads</option>
+                    </select>
                 </div>
-                <select id="insightsCameraFilter" style="display: none;">
-                    <option value="">All Roads</option>
-                </select>
-            </div>
                 <div class="status-pill">
                     <span class="status-pill__dot"></span>
                     <span class="status-pill__text">AI Ready</span>
@@ -55,15 +55,16 @@
 
         <!-- Main Content -->
         <main class="insights-content">
-            
+
             <!-- Simple Stats Row -->
             <div class="insights-stats-row">
                 <div class="insights-stat">
                     <div class="insights-stat__icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="16" x2="12" y2="12"/>
-                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="16" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12.01" y2="8" />
                         </svg>
                     </div>
                     <span class="insights-stat__value" id="totalSuggestions">0</span>
@@ -71,10 +72,12 @@
                 </div>
                 <div class="insights-stat">
                     <div class="insights-stat__icon insights-stat__icon--danger">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
                     </div>
                     <span class="insights-stat__value insights-stat__value--danger" id="highPriorityCount">0</span>
@@ -82,10 +85,11 @@
                 </div>
                 <div class="insights-stat">
                     <div class="insights-stat__icon insights-stat__icon--warning">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
                     </div>
                     <span class="insights-stat__value" id="signalCount">0</span>
@@ -93,10 +97,11 @@
                 </div>
                 <div class="insights-stat">
                     <div class="insights-stat__icon insights-stat__icon--success">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 21h18"/>
-                            <path d="M5 21V7l8-4 8 4v14"/>
-                            <path d="M17 21v-8.5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0-.5.5V21"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M3 21h18" />
+                            <path d="M5 21V7l8-4 8 4v14" />
+                            <path d="M17 21v-8.5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0-.5.5V21" />
                         </svg>
                     </div>
                     <span class="insights-stat__value" id="infraCount">0</span>
@@ -106,24 +111,27 @@
 
             <!-- Two Column Layout -->
             <div class="insights-columns">
-                
+
                 <!-- Left: High Priority -->
                 <div class="card">
                     <div class="card__header">
                         <h2 class="card__title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                                <line x1="12" y1="9" x2="12" y2="13"/>
-                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
                             </svg>
                             High Priority
                         </h2>
                     </div>
                     <div class="insights-list" id="highPriorityList">
                         <div class="insights-empty">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
                             </svg>
                             <span>No high priority issues</span>
                         </div>
@@ -134,22 +142,43 @@
                 <div class="card">
                     <div class="card__header">
                         <h2 class="card__title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z"/>
-                                <circle cx="12" cy="6" r="1"/>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22l-.75-12.07A4.001 4.001 0 0 1 12 2z" />
+                                <circle cx="12" cy="6" r="1" />
                             </svg>
                             All Recommendations
                         </h2>
                         <div class="card__actions">
+                            <button class="btn btn--primary btn--sm" id="generateAiReportBtn"
+                                style="margin-right: 8px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="margin-right: 4px;">
+                                    <path
+                                        d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+                                    <path d="M12 6v6l4 2" />
+                                </svg>
+                                Generate AI Report
+                            </button>
+                            <button class="btn btn--outline btn--sm" id="seedDataBtnHeader">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="margin-right: 4px;">
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                    <path d="M9 11l3 3L22 4" />
+                                </svg>
+                                Demo Data
+                            </button>
                             <button class="btn btn--outline btn--sm" id="exportBtn">Export</button>
                         </div>
                     </div>
                     <div class="insights-list insights-list--scroll" id="allSuggestionsList">
                         <div class="insights-empty">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="12" cy="12" r="10"/>
-                                <line x1="12" y1="16" x2="12" y2="12"/>
-                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
                             </svg>
                             <span>Run traffic analysis to generate recommendations</span>
                         </div>
@@ -160,10 +189,10 @@
 
             <!-- Bottom Row: Impact & Locations -->
             <div class="insights-bottom-row">
-                
+
                 <!-- Impact Card -->
-                    <div class="card">
-                        <div class="card__header">
+                <div class="card">
+                    <div class="card__header">
                         <h2 class="card__title">Estimated Impact</h2>
                     </div>
                     <div class="impact-grid">
@@ -171,20 +200,20 @@
                             <span class="impact-item__value" id="waitReduction">--</span>
                             <span class="impact-item__label">Wait Time</span>
                         </div>
-                            <div class="impact-item">
+                        <div class="impact-item">
                             <span class="impact-item__value" id="throughputIncrease">--</span>
                             <span class="impact-item__label">Throughput</span>
-                            </div>
-                            <div class="impact-item">
+                        </div>
+                        <div class="impact-item">
                             <span class="impact-item__value" id="co2Reduction">--</span>
                             <span class="impact-item__label">CO₂ Saved</span>
                         </div>
-                        </div>
                     </div>
+                </div>
 
                 <!-- Locations Card -->
-                    <div class="card">
-                        <div class="card__header">
+                <div class="card">
+                    <div class="card__header">
                         <h2 class="card__title">By Location</h2>
                     </div>
                     <div class="location-list" id="locationList">
@@ -201,7 +230,7 @@
 
     <style>
         /* Insights Page - Clean Column Layout */
-        
+
         .insights-content {
             padding: var(--space-lg) var(--space-xl);
             max-width: 1400px;
