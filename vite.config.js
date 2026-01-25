@@ -16,6 +16,13 @@ export default defineConfig({
     },
     server: {
         host: true,
-        allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.loca.lt', 'localhost']
+        allowedHosts: ['.ngrok-free.app', '.ngrok.io', '.loca.lt', 'localhost'],
+        proxy: {
+            '/proxy': {
+                target: 'http://localhost:3001',
+                changeOrigin: true,
+                secure: false
+            }
+        }
     }
 })

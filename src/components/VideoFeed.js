@@ -147,7 +147,10 @@ export class VideoFeed {
                     // Rewrite all HLS requests to go through local proxy to bypass CORS
                     // This allows TF.js to read pixels from the video element
                     if (url.includes('proxy')) return;
-                    const proxyUrl = `http://localhost:3001/proxy?url=${encodeURIComponent(url)}`;
+                    // Use relative path for proxy to work in both dev and prod
+                    // In dev (Vite), this is proxied to localhost:3001 via vite.config.js
+                    // In prod (Express), this is handled directly by server.js
+                    const proxyUrl = `/proxy?url=${encodeURIComponent(url)}`;
                     xhr.open('GET', proxyUrl, true);
                 }
             });
