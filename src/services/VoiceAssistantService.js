@@ -10,6 +10,12 @@ class VoiceAssistantService {
         this.agentId = localStorage.getItem('elevenlabs_agent_id') ||
             import.meta.env?.VITE_ELEVENLABS_AGENT_ID ||
             '';
+        
+        // Warn if no agent ID is configured
+        if (!this.agentId) {
+            console.warn('⚠️ No ElevenLabs Agent ID configured. Voice assistant will not work. Please set VITE_ELEVENLABS_AGENT_ID in .env or configure in settings.');
+        }
+        
         this.enabled = localStorage.getItem('voice_assistant_enabled') !== 'false';
 
         this.isConnected = false;

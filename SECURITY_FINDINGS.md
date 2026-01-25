@@ -55,4 +55,4 @@ This report documents all leaked API keys and secrets found in the repository.
 2026-01-25
 
 ## Audited By
-GitHub Copilot Security Agent
+Security Team
