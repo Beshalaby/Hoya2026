@@ -1,5 +1,5 @@
 ================================================================================
-                       TRAFFIQ HACKATHON VIDEO SCRIPT
+                       TRAFIQ HACKATHON VIDEO SCRIPT
                             (Target: 2-4 Minutes)
 ================================================================================
 
@@ -36,12 +36,12 @@ There's no intelligence. No adaptation. No prediction."
 --------------------------------------------------------------------------------
 SECTION 3: INTRODUCE THE SOLUTION (0:45 - 1:00)
 --------------------------------------------------------------------------------
-[VISUAL: Fade to black, then reveal TraffiQ logo with a subtle glow animation.]
+[VISUAL: Fade to black, then reveal TrafiQ logo with a subtle glow animation.]
 
 NARRATOR (V.O.):
-"Introducing TraffiQ—AI that watches, learns, and optimizes traffic in real time."
+"Introducing TrafiQ—AI that watches, learns, and optimizes traffic in real time."
 
-[VISUAL: Quick shot of TraffiQ landing page hero section.]
+[VISUAL: Quick shot of TrafiQ landing page hero section.]
 
 NARRATOR (V.O.):
 "Connect any camera. Let our AI see what's happening. 
@@ -51,7 +51,7 @@ And get actionable insights—instantly."
 --------------------------------------------------------------------------------
 SECTION 4: THE LIVE DEMO (1:00 - 2:30)
 --------------------------------------------------------------------------------
-[VISUAL: Screen recording of TraffiQ Dashboard]
+[VISUAL: Screen recording of TrafiQ Dashboard]
 
 NARRATOR (V.O.):
 "Here's how it works."
@@ -80,7 +80,7 @@ Look—congestion is spiking. Wait times are climbing."
 [VISUAL: Zoom into the "AI Recommendations" panel.]
 
 NARRATOR (V.O.):
-"But TraffiQ doesn't just watch. It advises.
+"But TrafiQ doesn't just watch. It advises.
 Right here: 'Reroute traffic via 4th Avenue. Dispatch EMS.'"
 
 -- STEP 4: THE FIX --
@@ -101,7 +101,7 @@ SECTION 5: THE IMPACT (2:30 - 3:00)
 [VISUAL: Analytics page OR impact ticker on Dashboard.]
 
 NARRATOR (V.O.):
-"In this simulation alone, TraffiQ saved..."
+"In this simulation alone, TrafiQ saved..."
 
 [TEXT ON SCREEN, animated in one by one:]
   - 15 minutes of average delay
@@ -115,17 +115,17 @@ NARRATOR (V.O.):
 --------------------------------------------------------------------------------
 SECTION 6: THE CLOSE (3:00 - 3:30)
 --------------------------------------------------------------------------------
-[VISUAL: Return to the TraffiQ landing page or logo.]
+[VISUAL: Return to the TrafiQ landing page or logo.]
 
 NARRATOR (V.O.):
-"TraffiQ: Smarter traffic starts here."
+"TrafiQ: Smarter traffic starts here."
 
 [VISUAL (Optional): Quick team photo or names on screen.]
 
 NARRATOR (V.O.):
 "Built by [Team Name] for [Hackathon Name]."
 
-[TEXT ON SCREEN: "Try TraffiQ" with a URL or QR code if applicable.]
+[TEXT ON SCREEN: "Try TrafiQ" with a URL or QR code if applicable.]
 
 [FADE TO BLACK]
 

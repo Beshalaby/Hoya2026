@@ -17,10 +17,10 @@ import { dataStore } from './src/services/DataStore.js';
 import { authService } from './src/services/AuthService.js';
 
 /**
- * TraffIQ - Traffic Optimization Dashboard
+ * TrafiQ - Traffic Optimization Dashboard
  * Main application entry point
  */
-class TraffIQApp {
+class TrafiQApp {
     constructor() {
         // Setup user menu
         this.setupUserMenu();
@@ -63,7 +63,7 @@ class TraffIQApp {
 
         console.log('🔄 Auto-creating demo user...');
         try {
-            await authService.register('demo@traffiq.ai', 'demo123', 'Demo User');
+            await authService.register('demo@trafiq.ai', 'demo123', 'Demo User');
             console.log('✅ Demo user created and logged in');
 
             // Refresh page to ensure clean state or just let init proceed?
@@ -71,7 +71,7 @@ class TraffIQApp {
         } catch (e) {
             // Might already exist but session expired? Try login.
             try {
-                await authService.login('demo@traffiq.ai', 'demo123');
+                await authService.login('demo@trafiq.ai', 'demo123');
                 console.log('✅ Demo user logged in');
             } catch (loginErr) {
                 console.error('Auth failed:', loginErr);
@@ -80,7 +80,7 @@ class TraffIQApp {
     }
 
     async init() {
-        console.log('🚦 TraffIQ Dashboard initializing...');
+        console.log('🚦 TrafiQ Dashboard initializing...');
         console.log('🔒 Auth status:', authService.isLoggedIn());
 
         // Initialize UI components first to allow user interaction
@@ -120,7 +120,7 @@ class TraffIQApp {
         // Initialize Analyzer logic
         this.initializeAnalyzer();
 
-        console.log('✅ TraffIQ Dashboard ready');
+        console.log('✅ TrafiQ Dashboard ready');
         console.log('⌨️  Keyboard shortcuts: D=Demo, C=Camera, E=Export, M=Mute, ?=Help');
     }
 
@@ -352,8 +352,8 @@ class TraffIQApp {
                 if (newHeight > 200 && newHeight < 1000) {
                     document.documentElement.style.setProperty('--map-height', `${newHeight}px`);
                     // Trigger map resize if Leaflet needs it
-                    if (window.traffiQ?.interactiveMap?.map) {
-                        window.traffiQ.interactiveMap.map.invalidateSize();
+                    if (window.trafiQ?.interactiveMap?.map) {
+                        window.trafiQ.interactiveMap.map.invalidateSize();
                     }
                 }
             };
@@ -472,7 +472,7 @@ class TraffIQApp {
      */
     showKeyboardHelp() {
         console.log(`
-⌨️ TraffiQ Keyboard Shortcuts:
+⌨️ TrafiQ Keyboard Shortcuts:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 D     - Toggle demo mode
 C     - Start camera analysis
@@ -512,7 +512,7 @@ ESC   - Stop demo / close modals
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `traffiq_data_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `trafiq_data_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1091,17 +1091,17 @@ ESC   - Stop demo / close modals
 // Initialize the app when DOM is ready
 // Initialize the app when DOM is ready
 const initApp = () => {
-    if (window.traffiQ) return;
-    window.traffiQ = new TraffIQApp();
+    if (window.trafiQ) return;
+    window.trafiQ = new TrafiQApp();
 
     // Cleanup on page unload to prevent zombie streams
     window.addEventListener('beforeunload', () => {
-        if (window.traffiQ && window.traffiQ.analyzer) {
+        if (window.trafiQ && window.trafiQ.analyzer) {
             // We use sendBeacon or synchronous XHR if we need to notify server,
             // but here we just try to close what we can.
             // Note: Async/await doesn't work well in beforeunload,
             // but calling stop() might trigger some cleanup.
-            window.traffiQ.analyzer.stop();
+            window.trafiQ.analyzer.stop();
         }
     });
 };

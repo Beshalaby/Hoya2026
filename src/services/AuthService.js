@@ -9,8 +9,8 @@
 
 class AuthService {
     constructor() {
-        this.USERS_KEY = 'traffiq_users';
-        this.SESSION_KEY = 'traffiq_session';
+        this.USERS_KEY = 'trafiq_users';
+        this.SESSION_KEY = 'trafiq_session';
         this.SESSION_EXPIRY_HOURS = 24;
     }
 

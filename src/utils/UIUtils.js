@@ -1,5 +1,5 @@
 /**
- * UI Utilities for TraffIQ
+ * UI Utilities for TrafiQ
  * Shared UI logic and components
  */
 

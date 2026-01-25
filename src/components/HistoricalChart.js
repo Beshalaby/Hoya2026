@@ -11,7 +11,7 @@ export class HistoricalChart {
         this.currentPeriod = 'hour';
 
         // Base key
-        this.baseKey = 'traffiq_historical_data';
+        this.baseKey = 'trafiq_historical_data';
 
         // Initial load
         this.data = this.loadFromStorage() || {
@@ -24,7 +24,7 @@ export class HistoricalChart {
 
     get storageKey() {
         try {
-            const session = localStorage.getItem('traffiq_session');
+            const session = localStorage.getItem('trafiq_session');
             if (session) {
                 const user = JSON.parse(session).email;
                 if (user) return `${this.baseKey}_${user}`;

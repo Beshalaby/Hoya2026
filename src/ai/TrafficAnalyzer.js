@@ -99,7 +99,7 @@ export class TrafficAnalyzer {
     this.apiKey = apiKey;
     // Save to localStorage for persistence
     if (apiKey) {
-      localStorage.setItem('traffiq_api_key', apiKey);
+      localStorage.setItem('trafiq_api_key', apiKey);
     }
   }
 
@@ -107,7 +107,7 @@ export class TrafficAnalyzer {
    * Get saved API key from localStorage
    */
   getSavedApiKey() {
-    return localStorage.getItem('traffiq_api_key') || '';
+    return localStorage.getItem('trafiq_api_key') || '';
   }
 
   /**

@@ -144,8 +144,8 @@ export class SignalControl {
      */
     toggleSimulation() {
         // This triggers the map simulation
-        if (window.traffiQ?.interactiveMap) {
-            window.traffiQ.interactiveMap.simulateTraffic();
+        if (window.trafiQ?.interactiveMap) {
+            window.trafiQ.interactiveMap.simulateTraffic();
         }
     }
 
