@@ -186,15 +186,15 @@ class TrafiQApp {
         const savedKey = this.analyzer.getSavedApiKey();
         const envKey = import.meta.env.VITE_OVERSHOOT_API_KEY;
 
-        if (user?.settings?.apiKey) {
+        if (envKey) {
+            this.analyzer.setApiKey(envKey);
+        } else if (user?.settings?.apiKey) {
             this.analyzer.setApiKey(user.settings.apiKey);
         } else if (savedKey) {
             this.analyzer.setApiKey(savedKey);
             if (user) authService.updateProfile({ settings: { apiKey: savedKey } });
-        } else if (envKey) {
-            this.analyzer.setApiKey(envKey);
         } else {
-            this.analyzer.setApiKey(import.meta.env.VITE_OVERSHOOT_API_KEY);
+            this.analyzer.setApiKey('');
         }
         this.updateConnectionStatus('ready');
     }
@@ -571,7 +571,8 @@ class TrafiQApp {
             this.videoFeed.setStatus('processing', 'Analyzing Stream...');
         } catch (error) {
             this.handleError(error);
-            this.videoFeed.setStatus('error', 'Connection Failed');
+            // Don't overwrite status here explicitly, let handleError decide
+        } finally {
             this.hideLoadingState();
         }
     }
@@ -660,8 +661,30 @@ class TrafiQApp {
 
     handleError(error) {
         console.error('Error:', error);
+        this.hideLoadingState();
 
-        const errorMsg = (error.message || '').toString().toLowerCase();
+        // Parse simplified string first to be safe
+        let errorMsg = '';
+        if (typeof error === 'string') errorMsg = error;
+        else if (error && error.message) errorMsg = error.message;
+        else if (error) errorMsg = JSON.stringify(error);
+        
+        errorMsg = errorMsg.toLowerCase();
+
+        // Check for Credit/Payment Limits
+        if (errorMsg.includes('payment') || errorMsg.includes('credit') || errorMsg.includes('quota') || errorMsg.includes('402') || errorMsg.includes('insufficient')) {
+            this.updateConnectionStatus('ready'); // Not fatal, just limited
+            this.videoFeed?.setStatus('processing', 'Local AI Only');
+            
+            // Show toast message
+            this.showToast(
+                'Overshoot API is not working due to credit limits, but car counting is still available by a custom TensorFlow model.',
+                null, 
+                'Dismiss'
+            );
+            return;
+        }
+
         if (errorMsg.includes('unauthorized') || errorMsg.includes('api key') || errorMsg.includes('401')) {
             this.updateConnectionStatus('error');
             this.videoFeed?.setStatus('error', 'Auth Failed. Check .env');

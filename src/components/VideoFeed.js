@@ -1,5 +1,6 @@
 import Hls from 'hls.js';
 import { OFFICIAL_CAMERAS } from '../config/cameras.js';
+import { UIUtils } from '../utils/UIUtils.js';
 
 /**
  * VideoFeed Component
@@ -56,6 +57,14 @@ export class VideoFeed {
             option.dataset.url = cam.url; // Store URL in dataset
             this.cameraSelect.appendChild(option);
         });
+
+        // Sync custom dropdown UI
+        const wrapper = this.cameraSelect.closest('.custom-select-wrapper');
+        if (wrapper) {
+            UIUtils.updateCustomDropdownOptions(wrapper);
+            // Re-bind events for new options
+            UIUtils.setupCustomDropdowns(wrapper.parentElement || document);
+        }
     }
 
     init() {
